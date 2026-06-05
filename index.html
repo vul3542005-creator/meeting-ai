@@ -4,490 +4,629 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>會議 AI 助手</title>
-<!-- Excel 解析 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<!-- Word 解析 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <style>
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-:root {
-  --bg: #f2f2f7; --card: #ffffff; --blue: #007AFF; --red: #e03434;
-  --t1: #1c1c1e; --t2: #6e6e73; --t3: #aeaeb2; --border: #d1d1d6;
-  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f2f2f7;--card:#fff;--blue:#007AFF;--red:#e03434;--green:#34C759;
+  --t1:#1c1c1e;--t2:#6e6e73;--t3:#aeaeb2;--border:#d1d1d6;
+  --font:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif
 }
-html, body { height: 100%; background: var(--bg); color: var(--t1); font-family: var(--font); font-size: 16px; line-height: 1.5; -webkit-text-size-adjust: 100%; }
-#app { max-width: 520px; margin: 0 auto; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--font);font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
+#app{max-width:520px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 
-/* ── Key Setup ── */
-#setup-screen { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px 24px; gap:18px; }
-.s-icon { width:76px; height:76px; background:var(--blue); border-radius:22px; display:flex; align-items:center; justify-content:center; font-size:38px; flex-shrink:0; }
-.s-title { font-size:24px; font-weight:700; }
-.s-desc { font-size:14px; color:var(--t2); text-align:center; line-height:1.7; max-width:300px; }
-.s-input { width:100%; padding:14px 16px; border-radius:12px; border:1.5px solid var(--border); background:var(--card); font-size:14px; font-family:'SF Mono',Menlo,monospace; color:var(--t1); outline:none; -webkit-appearance:none; }
-.s-input:focus { border-color:var(--blue); }
-.s-link { font-size:13px; color:var(--t2); text-align:center; }
-.s-link a { color:var(--blue); text-decoration:none; }
-.btn-blue { width:100%; padding:15px; background:var(--blue); color:#fff; border:none; border-radius:12px; font-size:16px; font-weight:600; cursor:pointer; font-family:var(--font); -webkit-tap-highlight-color:transparent; }
-.btn-blue:active { opacity:.8; }
+/* ── Key screen ── */
+#s-key{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:20px}
+#s-key .logo{font-size:48px;margin-bottom:4px}
+#s-key h1{font-size:22px;font-weight:600;color:var(--t1)}
+#s-key p{font-size:14px;color:var(--t2);text-align:center;line-height:1.6}
+#s-key input{width:100%;padding:14px 16px;border:1px solid var(--border);border-radius:12px;font-size:15px;outline:none;background:var(--card)}
+#s-key input:focus{border-color:var(--blue)}
+#s-key .note{font-size:12px;color:var(--t3);text-align:center}
+#s-key .note a{color:var(--blue);text-decoration:none}
 
-/* ── Main App ── */
-#main-app { flex:1; display:none; flex-direction:column; overflow:hidden; }
-.tabbar { display:flex; background:var(--card); border-bottom:1px solid var(--border); padding:0 20px; flex-shrink:0; }
-.tab { flex:1; padding:13px 0; border:none; background:transparent; font-size:14px; font-weight:500; color:var(--t2); cursor:pointer; border-bottom:2px solid transparent; font-family:var(--font); -webkit-tap-highlight-color:transparent; }
-.tab.on { color:var(--blue); border-bottom-color:var(--blue); }
+/* ── Setup screen ── */
+#s-setup{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.setup-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 0}
+.setup-hd h2{font-size:18px;font-weight:600}
+.setup-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.card{background:var(--card);border-radius:14px;padding:14px 16px}
+.card label{display:block;font-size:13px;font-weight:500;color:var(--t2);margin-bottom:6px}
+.card textarea{width:100%;border:none;outline:none;font-size:15px;color:var(--t1);resize:none;background:transparent;font-family:var(--font);line-height:1.5}
+.card input[type=text]{width:100%;border:none;outline:none;font-size:15px;color:var(--t1);background:transparent;font-family:var(--font)}
+.upload-zone{border:1.5px dashed var(--border);border-radius:12px;padding:14px;text-align:center;cursor:pointer;background:var(--bg)}
+.upload-zone p{font-size:13px;color:var(--t2);margin-top:4px}
+.file-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.file-tag{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t1);background:var(--bg);padding:6px 10px;border-radius:8px}
+.file-tag span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.file-tag .del{cursor:pointer;color:var(--t3);font-size:16px;flex-shrink:0}
+.setup-footer{padding:12px 16px 24px;display:flex;gap:10px}
 
-/* ── Setup Tab ── */
-#tab-setup { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px; display:flex; flex-direction:column; gap:12px; }
+/* ── Meeting screen ── */
+#s-mtg{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.mtg-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--card);flex-shrink:0}
+.mtg-hd h2{font-size:16px;font-weight:600}
+.rec-dot{width:10px;height:10px;border-radius:50%;background:var(--t3);display:inline-block;margin-right:6px}
+.rec-dot.on{background:var(--red);animation:blink 1s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.mtg-body{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px}
 
-/* ── Meeting Tab ── */
-#tab-meeting { flex:1; display:none; flex-direction:column; overflow:hidden; }
-#meeting-body { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px; display:flex; flex-direction:column; gap:12px; }
+/* ── Transcript ── */
+.trans-card{background:var(--card);border-radius:14px;padding:12px 14px;max-height:180px;overflow-y:auto}
+.trans-card h3{font-size:12px;font-weight:500;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.trans-line{font-size:14px;color:var(--t1);line-height:1.6;padding:2px 0}
+.trans-time{font-size:11px;color:var(--t3);margin-right:6px}
+.interim-text{font-size:14px;color:var(--t3);font-style:italic}
 
-/* ── Card ── */
-.card { background:var(--card); border-radius:14px; padding:14px 16px; }
-.card-label { font-size:11px; font-weight:600; color:var(--t3); letter-spacing:.06em; text-transform:uppercase; margin-bottom:10px; }
+/* ── Chat ── */
+.chat-card{background:var(--card);border-radius:14px;flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.chat-card h3{font-size:12px;font-weight:500;color:var(--t3);padding:12px 14px 0;text-transform:uppercase;letter-spacing:.04em}
+.chat-msgs{flex:1;overflow-y:auto;padding:8px 14px 4px;display:flex;flex-direction:column;gap:10px}
+.brow{display:flex;gap:8px}
+.brow.user{flex-direction:row-reverse}
+.bubble{max-width:85%;padding:10px 13px;border-radius:18px;font-size:14px;line-height:1.6;word-break:break-word}
+.bubble.user{background:var(--blue);color:#fff;border-bottom-right-radius:4px}
+.bubble.ai{background:var(--bg);color:var(--t1);border-bottom-left-radius:4px}
+.bubble.thinking{background:var(--bg);color:var(--t3);font-style:italic}
+.bubble img{max-width:100%;border-radius:8px;margin-bottom:6px;display:block}
+.img-bar{padding:6px 14px;display:flex;gap:6px;flex-wrap:wrap}
+.img-thumb{position:relative;width:52px;height:52px}
+.img-thumb img{width:52px;height:52px;object-fit:cover;border-radius:8px}
+.img-thumb .rm{position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--t2);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 
-/* ── Context ── */
-.ctx { width:100%; min-height:160px; border:none; outline:none; resize:none; font-size:14px; line-height:1.75; color:var(--t1); background:transparent; font-family:var(--font); }
+/* ── Input bar ── */
+.input-bar{padding:8px 12px 16px;display:flex;gap:8px;align-items:flex-end;flex-shrink:0;border-top:1px solid var(--border);background:var(--card)}
+.input-bar textarea{flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:20px;font-size:15px;outline:none;resize:none;max-height:100px;font-family:var(--font);line-height:1.4;background:var(--bg)}
+.input-bar textarea:focus{border-color:var(--blue)}
+.ico-btn{width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:var(--bg)}
+.ico-btn.blue{background:var(--blue);color:#fff}
+.ico-btn.red{background:var(--red);color:#fff}
 
-/* ── Upload Section ── */
-.upload-sec { margin-top:10px; border-top:1px solid var(--border); padding-top:12px; display:flex; flex-direction:column; gap:6px; }
-.btn-upload { display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; background:var(--bg); border:1.5px dashed var(--border); border-radius:10px; font-size:14px; color:var(--t2); cursor:pointer; font-family:var(--font); -webkit-tap-highlight-color:transparent; width:100%; }
-.btn-upload:active { background:#e5e5ea; }
-.upload-formats { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
-.fmt-tag { font-size:11px; background:#f0f0f5; color:var(--t2); padding:2px 8px; border-radius:6px; }
-.fmt-tag.free { background:#e5f7ea; color:#1b7a2f; }
-.fmt-tag.api  { background:#fff3e0; color:#b45309; }
-#upload-status { font-size:13px; text-align:center; min-height:20px; font-weight:500; color:var(--blue); }
-#upload-status.err { color:var(--red); }
-.ctx-foot { display:flex; justify-content:space-between; align-items:center; margin-top:12px; }
-.ctx-hint { font-size:12px; color:var(--t3); }
-.btn-go { padding:10px 22px; background:var(--blue); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:500; cursor:pointer; font-family:var(--font); }
-.btn-go:active { opacity:.8; }
-.btn-ghost { background:none; border:none; font-size:12px; color:var(--t3); cursor:pointer; padding:4px; font-family:var(--font); }
+/* ── Buttons ── */
+.btn{padding:13px 0;border:none;border-radius:14px;font-size:16px;font-weight:500;cursor:pointer;width:100%;font-family:var(--font)}
+.btn-blue{background:var(--blue);color:#fff}
+.btn-gray{background:var(--bg);color:var(--t1);border:1px solid var(--border)}
+.btn-red{background:#fff5f5;color:var(--red);border:1px solid #fcd0d0}
+.btn-sm{padding:9px 16px;border-radius:10px;font-size:14px;font-weight:500;border:none;cursor:pointer;font-family:var(--font)}
+.mtg-actions{display:flex;gap:8px;padding:0 0 8px}
+.mtg-actions .btn-sm{flex:1}
 
-/* ── Recording ── */
-.rec-row { display:flex; align-items:center; gap:14px; }
-.rec-btn { width:62px; height:62px; border-radius:50%; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all .2s; -webkit-tap-highlight-color:transparent; background:#f0f0f5; }
-.rec-btn.active { background:var(--red); animation:pulse 1.6s ease-in-out infinite; }
-@keyframes pulse { 0%,100%{ box-shadow:0 0 0 0 rgba(224,52,52,.35); } 50%{ box-shadow:0 0 0 11px rgba(224,52,52,0); } }
-.rec-meta { flex:1; }
-.rec-title { font-size:15px; font-weight:500; }
-.rec-sub { font-size:13px; color:var(--t2); margin-top:2px; }
-.rec-err { font-size:12px; color:var(--red); margin-top:4px; }
-
-/* ── Transcript & Chat ── */
-.trans-scroll { max-height:190px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
-.trans-line { font-size:14px; margin-bottom:6px; line-height:1.65; }
-.ts-time { font-size:11px; color:var(--t3); margin-right:7px; }
-.trans-interim { font-size:14px; color:var(--t2); font-style:italic; margin-top:4px; }
-.trans-empty, .chat-empty { font-size:13px; color:var(--t3); text-align:center; padding:18px 0; line-height:1.7; }
-.chat-scroll { min-height:100px; max-height:280px; overflow-y:auto; -webkit-overflow-scrolling:touch; }
-.brow { display:flex; margin-bottom:8px; }
-.brow.user { justify-content:flex-end; }
-.brow.ai   { justify-content:flex-start; }
-.bubble { max-width:83%; padding:9px 13px; font-size:14px; line-height:1.65; word-break:break-word; }
-.bubble.user { background:var(--blue); color:#fff; border-radius:18px 18px 4px 18px; }
-.bubble.ai   { background:#f0f0f5; color:var(--t1); border-radius:18px 18px 18px 4px; white-space:pre-wrap; }
-.bubble.thinking { background:#f0f0f5; color:var(--t2); border-radius:18px 18px 18px 4px; font-style:italic; }
-.chat-img { max-width:180px; max-height:140px; object-fit:cover; border-radius:10px; display:block; margin-bottom:5px; }
-
-/* ── Image Preview Bar ── */
-#img-bar { background:var(--card); border-top:1px solid var(--border); padding:8px 12px; display:none; gap:8px; overflow-x:auto; flex-shrink:0; }
-#img-bar.show { display:flex; }
-.thumb-wrap { position:relative; flex-shrink:0; }
-.thumb { width:56px; height:56px; object-fit:cover; border-radius:8px; display:block; }
-.thumb-rm { position:absolute; top:-5px; right:-5px; width:18px; height:18px; background:rgba(0,0,0,.6); color:#fff; border-radius:50%; font-size:10px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; }
-
-/* ── Input Bar ── */
-.input-bar { background:var(--card); border-top:1px solid var(--border); padding:10px 12px; display:flex; align-items:center; gap:8px; flex-shrink:0; }
-.btn-attach { width:42px; height:42px; border-radius:50%; border:none; background:var(--bg); color:var(--t2); display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; -webkit-tap-highlight-color:transparent; }
-.btn-attach:active { opacity:.7; }
-.msg-in { flex:1; padding:10px 15px; border-radius:22px; border:1.5px solid var(--border); background:var(--bg); font-size:14px; font-family:var(--font); color:var(--t1); outline:none; -webkit-appearance:none; }
-.msg-in:focus { border-color:var(--blue); }
-.btn-send { width:42px; height:42px; border-radius:50%; border:none; background:var(--blue); color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
-.btn-send:disabled { background:var(--t3); cursor:default; }
-.act-row { display:flex; gap:8px; padding:0 16px 14px; flex-shrink:0; }
-.btn-act { flex:1; padding:11px 0; border-radius:11px; border:none; font-size:13px; font-weight:500; cursor:pointer; font-family:var(--font); }
-.btn-sum { background:#e5f7ea; color:#1b7a2f; }
-.btn-sum:disabled { background:#f0f0f5; color:var(--t3); cursor:default; }
-.btn-rst { background:#f0f0f5; color:var(--t2); }
+/* ── Misc ── */
+.err{color:var(--red);font-size:13px;text-align:center}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff3;border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
 <div id="app">
 
-  <!-- API Key 設定 -->
-  <div id="setup-screen">
-    <div class="s-icon">🎙️</div>
-    <div class="s-title">會議 AI 助手</div>
-    <div class="s-desc">首次使用請輸入 Anthropic API Key<br>只需輸入一次，儲存在此裝置瀏覽器中</div>
-    <input id="key-in" type="password" class="s-input" placeholder="sk-ant-api03-..." autocomplete="off"
-      onkeydown="if(event.key==='Enter') saveKey()" />
-    <div class="s-link">前往 <a href="https://console.anthropic.com/account/keys" target="_blank">console.anthropic.com</a> 申請或管理 Key</div>
-    <button class="btn-blue" onclick="saveKey()">儲存並開始使用</button>
+<!-- ═══ Screen 1: API Key ═══ -->
+<div id="s-key">
+  <div class="logo">🎙️</div>
+  <h1>會議 AI 助手</h1>
+  <p>請輸入你的 Google Gemini API Key<br>存在瀏覽器中，不會上傳到任何伺服器</p>
+  <input id="inp-key" type="password" placeholder="AIzaSy..." autocomplete="off">
+  <p class="err" id="key-err"></p>
+  <button class="btn btn-blue" onclick="saveKey()">開始使用</button>
+  <p class="note">取得免費 API Key：<a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a></p>
+</div>
+
+<!-- ═══ Screen 2: Meeting Setup ═══ -->
+<div id="s-setup" hidden>
+  <div class="setup-hd">
+    <button onclick="goKey()" style="background:none;border:none;color:var(--blue);font-size:15px;cursor:pointer">← 返回</button>
+    <h2>會議設定</h2>
+    <div style="width:50px"></div>
   </div>
-
-  <!-- 主要 App -->
-  <div id="main-app">
-    <div class="tabbar">
-      <button class="tab on" id="t-setup" onclick="goTab('setup')">會議設定</button>
-      <button class="tab"    id="t-meet"  onclick="goTab('meet')">開會中</button>
+  <div class="setup-body">
+    <div class="card">
+      <label>議程</label>
+      <textarea id="inp-agenda" rows="3" placeholder="1. 產品方向討論&#10;2. 預算分配&#10;3. 待辦事項確認"></textarea>
     </div>
-
-    <!-- 設定 Tab -->
-    <div id="tab-setup">
-      <div class="card">
-        <div class="card-label">會議前資料</div>
-        <textarea id="ctx-in" class="ctx"
-          placeholder="把議程、背景、上次決議、參與者等貼在這裡，或用下方按鈕上傳檔案。"
-          oninput="saveCtx(this.value)"></textarea>
-
-        <div class="upload-sec">
-          <input type="file" id="ctx-file"
-            accept="image/*,.txt,.text,.xlsx,.xls,.docx,.doc"
-            style="display:none" onchange="uploadCtxFile(this)" multiple />
-          <button class="btn-upload" onclick="document.getElementById('ctx-file').click()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="17 8 12 3 7 8"/>
-              <line x1="12" y1="3" x2="12" y2="15"/>
-            </svg>
-            上傳會議資料
-          </button>
-          <div class="upload-formats">
-            <span class="fmt-tag free">Excel .xlsx</span>
-            <span class="fmt-tag free">Word .docx</span>
-            <span class="fmt-tag free">文字 .txt</span>
-            <span class="fmt-tag api">圖片（需 API 額度）</span>
-          </div>
-          <div id="upload-status"></div>
-        </div>
-
-        <div class="ctx-foot">
-          <span class="ctx-hint" id="ctx-hint">自動儲存</span>
-          <button class="btn-go" onclick="goTab('meet')">進入會議 →</button>
-        </div>
-      </div>
-      <button class="btn-ghost" onclick="changeKey()">更換 API Key</button>
+    <div class="card">
+      <label>背景資料 / 待決議事項</label>
+      <textarea id="inp-bg" rows="3" placeholder="上次會議決議、需要解決的問題等"></textarea>
     </div>
-
-    <!-- 開會 Tab -->
-    <div id="tab-meeting">
-      <div id="meeting-body">
-        <div class="card">
-          <div class="rec-row">
-            <button class="rec-btn" id="rec-btn" onclick="toggleRec()">
-              <svg id="rec-ic" width="28" height="28" viewBox="0 0 24 24" fill="none"
-                stroke="#aeaeb2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/>
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-                <line x1="12" y1="19" x2="12" y2="23"/>
-                <line x1="8" y1="23" x2="16" y2="23"/>
-              </svg>
-            </button>
-            <div class="rec-meta">
-              <div class="rec-title" id="rec-title">點擊開始錄音</div>
-              <div class="rec-sub"   id="rec-sub">需要 Chrome 或 Safari 瀏覽器</div>
-              <div class="rec-err"   id="rec-err"></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-label">即時逐字稿</div>
-          <div class="trans-scroll" id="trans">
-            <div class="trans-empty">開始錄音後，對話內容即時顯示在這裡</div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-label">詢問 AI</div>
-          <div class="chat-scroll" id="chat">
-            <div class="chat-empty">在下方輸入問題或拍照<br>Claude 同時參考「背景資料」和「即時逐字稿」</div>
-          </div>
-        </div>
-      </div>
-
-      <div id="img-bar"></div>
-      <input type="file" id="chat-file" accept="image/*" style="display:none" onchange="onChatImg(this)" />
-      <div class="input-bar">
-        <button class="btn-attach" onclick="document.getElementById('chat-file').click()">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-            <circle cx="12" cy="13" r="4"/>
-          </svg>
-        </button>
-        <input id="msg-in" class="msg-in" type="text" placeholder="問 AI 任何問題…" autocomplete="off"
-          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send()}" />
-        <button class="btn-send" onclick="send()">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="22" y1="2" x2="11" y2="13"/>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-          </svg>
-        </button>
-      </div>
-      <div class="act-row">
-        <button class="btn-act btn-sum" id="btn-sum" onclick="summary()" disabled>📋 產出會議紀錄</button>
-        <button class="btn-act btn-rst" onclick="resetMtg()">🔄 重置</button>
-      </div>
+    <div class="card">
+      <label>參與者</label>
+      <input id="inp-ptcp" type="text" placeholder="王、李、張、AI 助手">
     </div>
+    <div class="card">
+      <label>上傳會議資料（選填）</label>
+      <div class="upload-zone" onclick="document.getElementById('file-inp').click()">
+        <div style="font-size:28px">📎</div>
+        <p>點擊上傳<br>支援：圖片、Excel、Word、TXT</p>
+        <input id="file-inp" type="file" accept="image/*,.xlsx,.xls,.docx,.txt" multiple hidden onchange="handleFiles(this.files)">
+      </div>
+      <div class="file-list" id="file-list"></div>
+    </div>
+  </div>
+  <div class="setup-footer">
+    <button class="btn btn-blue" onclick="startMeeting()">✅ 開始會議</button>
   </div>
 </div>
 
+<!-- ═══ Screen 3: Meeting ═══ -->
+<div id="s-mtg" hidden>
+  <div class="mtg-hd">
+    <span><span class="rec-dot" id="rec-dot"></span><span id="rec-label">未錄音</span></span>
+    <h2>會議進行中</h2>
+    <button onclick="toggleRec()" id="btn-rec" style="background:none;border:none;font-size:22px;cursor:pointer">🎤</button>
+  </div>
+  <div class="mtg-body" id="meeting-body">
+    <div class="trans-card" id="trans-card">
+      <h3>即時轉錄</h3>
+      <div id="trans-lines"><p style="color:var(--t3);font-size:14px">點擊右上角麥克風開始錄音</p></div>
+      <div id="interim-box"></div>
+    </div>
+    <div class="chat-card">
+      <h3>AI 對話（輸入 @AI 提問）</h3>
+      <div class="chat-msgs" id="chat-msgs"><p style="color:var(--t3);font-size:14px;padding:8px 0">還沒有對話。輸入 @AI 開頭來提問。</p></div>
+    </div>
+  </div>
+  <div class="img-bar" id="img-bar"></div>
+  <div class="mtg-actions" id="mtg-actions" style="padding:0 16px 0">
+    <button class="btn-sm" id="btn-sum" style="background:#f0f7ff;color:var(--blue);border:1px solid #c0d8ff" onclick="genSummary()" disabled>📋 會議總結</button>
+    <button class="btn-sm" style="background:var(--bg);color:var(--t2);border:1px solid var(--border)" onclick="exportTxt()">💾 匯出</button>
+    <button class="btn-sm" style="background:#fff5f5;color:var(--red);border:1px solid #fcd0d0" onclick="resetMtg()">🔄 重置</button>
+  </div>
+  <div class="input-bar">
+    <button class="ico-btn" onclick="document.getElementById('chat-img-inp').click()" title="上傳圖片">📷</button>
+    <input id="chat-img-inp" type="file" accept="image/*" multiple hidden onchange="addChatImgs(this.files)">
+    <textarea id="chat-inp" rows="1" placeholder="@AI 請問..." oninput="autoGrow(this)" onkeydown="chatKeydown(event)"></textarea>
+    <button class="ico-btn blue" onclick="sendChat()">↑</button>
+  </div>
+</div>
+
+</div><!-- #app -->
 <script>
-const LS_KEY='mtg_key_v1', LS_CTX='mtg_ctx_v1', MODEL='claude-sonnet-4-6';
-let apiKey='', preCtx='', trans=[], msgs=[], pendingImgs=[], recOn=false, thinking=false, interim='', recObj=null, recRef=false;
+// ═══ State ═══
+const KEY_STORE = 'gemini_api_key';
+let apiKey = localStorage.getItem(KEY_STORE) || '';
+let agenda='', bgInfo='', participants='', uploadedData='';
+let trans=[], msgs=[], interim='', pendingImgs=[], thinking=false;
+let recognition=null, isRecording=false;
+let uploadedFiles=[];
 
-(function init(){
-  apiKey=localStorage.getItem(LS_KEY)||'';
-  preCtx=localStorage.getItem(LS_CTX)||'';
-  if(apiKey){ showApp(); document.getElementById('ctx-in').value=preCtx; setCtxHint(); }
-})();
+// ═══ Init ═══
+window.onload = () => {
+  if (apiKey) {
+    showScreen('s-setup');
+    document.getElementById('inp-key').value = apiKey;
+  } else {
+    showScreen('s-key');
+  }
+};
 
-function showApp(){ document.getElementById('setup-screen').style.display='none'; document.getElementById('main-app').style.display='flex'; }
-function showKeyScreen(){ document.getElementById('setup-screen').style.display='flex'; document.getElementById('main-app').style.display='none'; }
-
-function saveKey(){
-  const k=document.getElementById('key-in').value.trim();
-  if(!k.startsWith('sk-ant-')){ alert('請輸入正確的 Anthropic API Key（格式：sk-ant-…）'); return; }
-  apiKey=k; localStorage.setItem(LS_KEY,k); showApp();
+function showScreen(id) {
+  ['s-key','s-setup','s-mtg'].forEach(s => {
+    document.getElementById(s).hidden = (s !== id);
+  });
 }
-function changeKey(){
-  if(!confirm('確定要更換 API Key？')) return;
-  localStorage.removeItem(LS_KEY); apiKey=''; document.getElementById('key-in').value=''; showKeyScreen();
+
+// ═══ API Key ═══
+function saveKey() {
+  const k = document.getElementById('inp-key').value.trim();
+  if (!k.startsWith('AIzaSy') && !k.startsWith('AIza')) {
+    document.getElementById('key-err').textContent = '格式看起來不對，Gemini Key 通常以 AIzaSy 開頭';
+    return;
+  }
+  apiKey = k;
+  localStorage.setItem(KEY_STORE, k);
+  document.getElementById('key-err').textContent = '';
+  showScreen('s-setup');
 }
-function goTab(t){
-  const s=t==='setup';
-  document.getElementById('t-setup').classList.toggle('on',s);
-  document.getElementById('t-meet').classList.toggle('on',!s);
-  document.getElementById('tab-setup').style.display  =s?'flex':'none';
-  document.getElementById('tab-meeting').style.display=s?'none':'flex';
+
+function goKey() {
+  showScreen('s-key');
 }
-function saveCtx(v){ preCtx=v; localStorage.setItem(LS_CTX,v); setCtxHint(); }
-function setCtxHint(){ document.getElementById('ctx-hint').textContent=preCtx.length>0?`已儲存 ${preCtx.length} 字`:'自動儲存'; }
 
-// ── 設定頁上傳（Excel / Word / 圖片 / TXT）────────────────
-async function uploadCtxFile(input){
-  const files=Array.from(input.files); input.value='';
-  if(!files.length) return;
-
-  for(const file of files){
-    const name=file.name, ext=name.split('.').pop().toLowerCase();
-
-    // ── 文字檔
-    if(file.type.startsWith('text/')||['txt','text','csv'].includes(ext)){
-      const text=await readText(file);
-      appendCtx(`【${name}】\n${text}`);
-      setUploadSt(`✓ 已加入：${name}`,false); continue;
+// ═══ File Upload（Setup）═══
+async function handleFiles(files) {
+  for (const f of files) {
+    const name = f.name;
+    const ext = name.split('.').pop().toLowerCase();
+    let text = '';
+    try {
+      if (ext === 'txt') {
+        text = await f.text();
+      } else if (ext === 'xlsx' || ext === 'xls') {
+        text = await readExcel(f);
+      } else if (ext === 'docx') {
+        text = await readDocx(f);
+      } else if (f.type.startsWith('image/')) {
+        const b64 = await toBase64(f);
+        text = await ocrImage(b64, f.type);
+      }
+      if (text) {
+        uploadedFiles.push({ name, text });
+        renderFileList();
+      }
+    } catch(e) {
+      alert('讀取 ' + name + ' 失敗：' + e.message);
     }
+  }
+  document.getElementById('file-inp').value = '';
+}
 
-    // ── Excel
-    if(['xlsx','xls'].includes(ext)||file.type.includes('spreadsheet')||file.type.includes('excel')){
-      setUploadSt(`讀取中：${name}…`,false);
-      try{
-        const text=await readExcel(file);
-        appendCtx(`【${name} — Excel】\n${text}`);
-        setUploadSt(`✓ 已加入：${name}`,false);
-      }catch(e){ setUploadSt(`讀取失敗：${e.message}`,true); }
-      continue;
-    }
-
-    // ── Word
-    if(['docx','doc'].includes(ext)||file.type.includes('word')||file.type.includes('document')){
-      setUploadSt(`讀取中：${name}…`,false);
-      try{
-        const text=await readWord(file);
-        appendCtx(`【${name} — Word】\n${text}`);
-        setUploadSt(`✓ 已加入：${name}`,false);
-      }catch(e){ setUploadSt(`讀取失敗：${e.message}`,true); }
-      continue;
-    }
-
-    // ── 圖片（需 API 額度）
-    if(file.type.startsWith('image/')){
-      setUploadSt(`辨識中：${name}…（需 API 額度）`,false);
-      try{
-        const b64=await readB64(file);
-        const res=await fetch('https://api.anthropic.com/v1/messages',{
-          method:'POST',
-          headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-          body:JSON.stringify({model:MODEL,max_tokens:1024,messages:[{role:'user',content:[
-            {type:'image',source:{type:'base64',media_type:file.type,data:b64}},
-            {type:'text',text:'請仔細閱讀圖片中的所有文字和資訊，整理成清晰的純文字格式，保留所有細節。只輸出整理後的文字，不加前言。'}
-          ]}]})
+function readExcel(f) {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(e.target.result, {type:'array'});
+        let out = '';
+        wb.SheetNames.forEach(sn => {
+          out += '【' + sn + '】\n';
+          const rows = XLSX.utils.sheet_to_csv(wb.Sheets[sn]);
+          // Limit to 300 lines to avoid token overflow
+          const lines = rows.split('\n').filter(r=>r.replace(/,/g,'').trim()).slice(0,300);
+          out += lines.join('\n') + '\n';
         });
-        const d=await res.json();
-        if(d.error) throw new Error(d.error.message);
-        appendCtx(`【${name} — 圖片辨識】\n${d.content[0].text}`);
-        setUploadSt(`✓ 已辨識：${name}`,false);
-      }catch(e){ setUploadSt(`辨識失敗：${e.message}`,true); }
-      continue;
+        res(out);
+      } catch(e){ rej(e); }
+    };
+    reader.readAsArrayBuffer(f);
+  });
+}
+
+function readDocx(f) {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      mammoth.extractRawText({arrayBuffer: e.target.result})
+        .then(r => res(r.value))
+        .catch(rej);
+    };
+    reader.readAsArrayBuffer(f);
+  });
+}
+
+function toBase64(f) {
+  return new Promise((res,rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(f);
+  });
+}
+
+async function ocrImage(b64, mimeType) {
+  const resp = await fetch(
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey,
+    {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        contents:[{
+          role:'user',
+          parts:[
+            {inline_data:{mime_type:mimeType, data:b64}},
+            {text:'請辨識這張圖片中所有的文字內容，保持原始格式，不要加入任何說明'}
+          ]
+        }]
+      })
     }
-
-    setUploadSt(`不支援此格式：${name}`,true);
-  }
-  setTimeout(()=>setUploadSt('',false),5000);
+  );
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error?.message || '辨識失敗');
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
-function appendCtx(text){
-  const ta=document.getElementById('ctx-in');
-  const v=(ta.value?ta.value.trimEnd()+'\n\n':'')+text.trim();
-  ta.value=v; saveCtx(v);
-}
-function setUploadSt(msg,isErr){
-  const el=document.getElementById('upload-status');
-  el.textContent=msg; el.className=isErr?'err':'';
+function renderFileList() {
+  const el = document.getElementById('file-list');
+  el.innerHTML = uploadedFiles.map((f,i) =>
+    '<div class="file-tag"><span>📄 ' + h(f.name) + '</span><span class="del" onclick="removeFile(' + i + ')">✕</span></div>'
+  ).join('');
 }
 
-// 檔案讀取工具
-function readText(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result); r.onerror=rej; r.readAsText(file,'UTF-8'); }); }
-function readB64(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=e=>res(e.target.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(file); }); }
+function removeFile(i) {
+  uploadedFiles.splice(i, 1);
+  renderFileList();
+}
 
-function readExcel(file){
-  return new Promise((res,rej)=>{
-    const r=new FileReader();
-    r.onload=e=>{
-      try{
-        const wb=XLSX.read(e.target.result,{type:'binary'});
-        let out='';
-        wb.SheetNames.forEach(n=>{
-          const csv=XLSX.utils.sheet_to_csv(wb.Sheets[n],{blankrows:false});
-          if(csv.trim()) out+=`【工作表：${n}】\n${csv}\n\n`;
-        });
-        res(out.trim()||'（空白檔案）');
-      }catch(err){rej(err);}
+// ═══ Start Meeting ═══
+function startMeeting() {
+  agenda = document.getElementById('inp-agenda').value.trim();
+  bgInfo = document.getElementById('inp-bg').value.trim();
+  participants = document.getElementById('inp-ptcp').value.trim();
+  uploadedData = uploadedFiles.map(f => '【' + f.name + '】\n' + f.text).join('\n\n');
+  trans=[]; msgs=[]; interim=''; pendingImgs=[];
+  renderTrans(); renderChat(); setSumBtn();
+  showScreen('s-mtg');
+}
+
+// ═══ Speech Recognition ═══
+function toggleRec() {
+  isRecording ? stopRec() : startRec();
+}
+
+function startRec() {
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) { alert('此瀏覽器不支援語音辨識，請使用 Chrome'); return; }
+  recognition = new SpeechRec();
+  recognition.lang = 'zh-TW';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.onresult = e => {
+    let fin='', intr='';
+    for (let i=e.resultIndex; i<e.results.length; i++) {
+      if (e.results[i].isFinal) fin += e.results[i][0].transcript;
+      else intr += e.results[i][0].transcript;
+    }
+    if (fin) {
+      trans.push({t: now(), text: fin.trim()});
+      renderTrans();
+      setSumBtn();
+    }
+    interim = intr;
+    document.getElementById('interim-box').innerHTML = interim
+      ? '<div class="interim-text">' + h(interim) + '</div>' : '';
+  };
+  recognition.onerror = e => {
+    if (e.error !== 'no-speech') console.warn('SR error:', e.error);
+  };
+  recognition.onend = () => {
+    if (isRecording) recognition.start(); // auto-restart
+  };
+  recognition.start();
+  isRecording = true;
+  document.getElementById('rec-dot').classList.add('on');
+  document.getElementById('rec-label').textContent = '錄音中';
+  document.getElementById('btn-rec').textContent = '⏹️';
+}
+
+function stopRec() {
+  if (recognition) { recognition.onend=null; recognition.stop(); recognition=null; }
+  isRecording = false;
+  document.getElementById('rec-dot').classList.remove('on');
+  document.getElementById('rec-label').textContent = '已停止';
+  document.getElementById('btn-rec').textContent = '🎤';
+}
+
+// ═══ Chat ═══
+function chatKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+function autoGrow(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+}
+
+function addChatImgs(files) {
+  for (const f of files) {
+    const r = new FileReader();
+    r.onload = e => {
+      pendingImgs.push({src: e.target.result, type: f.type, data: e.target.result.split(',')[1]});
+      renderImgBar();
     };
-    r.onerror=rej; r.readAsBinaryString(file);
-  });
-}
-
-function readWord(file){
-  return new Promise((res,rej)=>{
-    const r=new FileReader();
-    r.onload=async e=>{
-      try{
-        const result=await mammoth.extractRawText({arrayBuffer:e.target.result});
-        res(result.value||'（空白文件）');
-      }catch(err){rej(err);}
-    };
-    r.onerror=rej; r.readAsArrayBuffer(file);
-  });
-}
-
-// ── 錄音 ─────────────────────────────────────────────────
-function toggleRec(){ recOn?stopRec():startRec(); }
-function startRec(){
-  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){ showRecErr('此瀏覽器不支援語音辨識，請改用 Chrome 或 Safari'); return; }
-  clearRecErr();
-  const r=new SR(); r.continuous=true; r.interimResults=true; r.lang='zh-TW';
-  r.onresult=onResult; r.onerror=onRecErr;
-  r.onend=()=>{ if(recRef){ try{recObj.start();}catch{} } };
-  r.start(); recObj=r; recRef=true; recOn=true; setRecUI(true);
-}
-function stopRec(){ recRef=false; recOn=false; if(recObj){recObj.stop();recObj=null;} interim=''; setRecUI(false); renderTrans(); }
-function onResult(e){
-  let tmp='';
-  for(let i=e.resultIndex;i<e.results.length;i++){
-    const txt=e.results[i][0].transcript;
-    if(e.results[i].isFinal){ if(txt.trim()){ const n=new Date(); trans.push({time:`${p2(n.getHours())}:${p2(n.getMinutes())}:${p2(n.getSeconds())}`,text:txt.trim()}); interim=''; setRecUI(true); setSumBtn(); } }
-    else{ tmp+=txt; }
+    r.readAsDataURL(f);
   }
-  interim=tmp; renderTrans();
-}
-function onRecErr(e){
-  if(e.error==='not-allowed'){ showRecErr('請允許麥克風存取權限，刷新頁面後再試'); recRef=false; recOn=false; setRecUI(false); }
-  else if(e.error!=='no-speech'){ showRecErr(`錯誤：${e.error}`); }
-}
-function setRecUI(on){
-  const btn=document.getElementById('rec-btn'), ic=document.getElementById('rec-ic');
-  btn.className='rec-btn'+(on?' active':'');
-  ic.setAttribute('stroke',on?'#fff':'#aeaeb2');
-  ic.innerHTML=on?'<rect x="6" y="6" width="12" height="12" rx="2" fill="#fff" stroke="none"/>'
-    :'<path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>';
-  document.getElementById('rec-title').textContent=on?'錄音中…':'點擊開始錄音';
-  document.getElementById('rec-sub').textContent  =on?`已轉錄 ${trans.length} 段`:'需要 Chrome 或 Safari 瀏覽器';
-}
-function showRecErr(m){ document.getElementById('rec-err').textContent=m; }
-function clearRecErr(){ document.getElementById('rec-err').textContent=''; }
-function renderTrans(){
-  const el=document.getElementById('trans');
-  if(!trans.length&&!interim){ el.innerHTML='<div class="trans-empty">開始錄音後，對話內容即時顯示在這裡</div>'; return; }
-  el.innerHTML=trans.map(t=>`<div class="trans-line"><span class="ts-time">${t.time}</span>${h(t.text)}</div>`).join('')+(interim?`<div class="trans-interim">${h(interim)}…</div>`:'');
-  el.scrollTop=el.scrollHeight;
+  document.getElementById('chat-img-inp').value = '';
 }
 
-// ── 開會頁拍照 ────────────────────────────────────────────
-function onChatImg(input){
-  Array.from(input.files).forEach(f=>{ const r=new FileReader(); r.onload=e=>{ pendingImgs.push({data:e.target.result.split(',')[1],mime:f.type,preview:e.target.result}); renderImgBar(); }; r.readAsDataURL(f); });
-  input.value='';
-}
-function removeImg(i){ pendingImgs.splice(i,1); renderImgBar(); }
-function renderImgBar(){
-  const bar=document.getElementById('img-bar');
-  if(!pendingImgs.length){ bar.className=''; bar.innerHTML=''; return; }
-  bar.className='show';
-  bar.innerHTML=pendingImgs.map((img,i)=>`<div class="thumb-wrap"><img class="thumb" src="${img.preview}"/><button class="thumb-rm" onclick="removeImg(${i})">✕</button></div>`).join('');
+function renderImgBar() {
+  const el = document.getElementById('img-bar');
+  el.innerHTML = pendingImgs.map((img,i) =>
+    '<div class="img-thumb"><img src="' + img.src + '"><span class="rm" onclick="removePendingImg(' + i + ')">✕</span></div>'
+  ).join('');
 }
 
-// ── Claude API ────────────────────────────────────────────
-function sysPrompt(){
-  const tLines=trans.length?trans.map(t=>`[${t.time}] ${t.text}`).join('\n'):'（尚無轉錄）';
-  return `你是會議 AI 助手，用繁體中文回答。\n\n━━ 【會議前資料】 ━━\n${preCtx||'（未填寫）'}\n\n━━ 【即時會議逐字稿】 ━━\n${tLines}\n\n同時參考以上兩個來源回答。如附有圖片請一併分析。回答簡潔有結構，分配任務時按部門或負責人列出。`;
-}
-async function callAPI(history){
-  const res=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-    body:JSON.stringify({model:MODEL,max_tokens:1024,system:sysPrompt(),messages:history})
-  });
-  const d=await res.json();
-  if(d.error) throw new Error(d.error.message);
-  return d.content[0].text;
+function removePendingImg(i) {
+  pendingImgs.splice(i, 1);
+  renderImgBar();
 }
 
-// ── 發送 ─────────────────────────────────────────────────
-async function send(custom){
-  const inp=document.getElementById('msg-in');
-  const txt=(custom||inp.value).trim();
-  const imgs=custom?[]:[...pendingImgs];
-  if(!txt&&!imgs.length||thinking) return;
-  inp.value='';
-  const content=imgs.length?[...imgs.map(i=>({type:'image',source:{type:'base64',media_type:i.mime,data:i.data}})),{type:'text',text:txt||'請描述圖片內容，結合會議背景分析。'}]:txt;
-  pendingImgs=[]; renderImgBar();
-  msgs.push({role:'user',content,display:{text:txt,images:imgs.map(i=>i.preview)}});
-  thinking=true; renderChat();
-  try{
-    const reply=await callAPI(msgs.map(m=>({role:m.role,content:m.content})));
-    msgs.push({role:'assistant',content:reply,display:{text:reply,images:[]}});
-  }catch(e){
-    msgs.push({role:'assistant',content:`⚠ 錯誤：${e.message}`,display:{text:`⚠ 錯誤：${e.message}`,images:[]}});
+async function sendChat() {
+  const inp = document.getElementById('chat-inp');
+  const txt = inp.value.trim();
+  if (!txt && pendingImgs.length === 0) return;
+  if (thinking) return;
+
+  if (txt && !txt.includes('@AI') && !txt.includes('@ai')) {
+    // Show hint but still allow sending
   }
-  thinking=false; renderChat();
-}
-async function summary(){
-  await send('請根據所有資料，用繁體中文產出完整會議紀錄：\n\n一、主要決議\n\n二、各部門 / 人員待辦事項（含負責人與期限）\n\n三、後續追蹤與待確認事項');
-}
-function renderChat(){
-  const el=document.getElementById('chat');
-  if(!msgs.length&&!thinking){ el.innerHTML='<div class="chat-empty">在下方輸入問題或拍照<br>Claude 同時參考「背景資料」和「即時逐字稿」</div>'; return; }
-  el.innerHTML=msgs.map(m=>{
-    const d=m.display;
-    const imgs=d.images.map(s=>`<img class="chat-img" src="${s}"/>`).join('');
-    return `<div class="brow ${m.role}"><div class="bubble ${m.role}">${imgs}${d.text?`<span>${h(d.text)}</span>`:''}</div></div>`;
-  }).join('')+(thinking?'<div class="brow ai"><div class="bubble thinking">思考中…</div></div>':'');
-  el.scrollTop=el.scrollHeight;
-  document.getElementById('meeting-body').scrollTop=99999;
+
+  const userMsg = { role:'user', content: txt, images: [...pendingImgs] };
+  msgs.push(userMsg);
+  pendingImgs = [];
+  inp.value = ''; inp.style.height='auto';
+  renderImgBar();
+  renderChat();
+
+  thinking = true;
+  setSumBtn();
+  const aiMsg = { role:'assistant', content:'' };
+  msgs.push(aiMsg);
+  renderChat();
+
+  try {
+    const sysPrompt = buildSysPrompt();
+    const geminiMsgs = buildGeminiMsgs();
+    await streamGemini(sysPrompt, geminiMsgs, chunk => {
+      aiMsg.content += chunk;
+      renderChat();
+    });
+  } catch(e) {
+    aiMsg.content = '❌ 錯誤：' + e.message;
+    renderChat();
+  }
+  thinking = false;
   setSumBtn();
 }
-function setSumBtn(){ document.getElementById('btn-sum').disabled=trans.length===0||thinking; }
-function resetMtg(){
-  if(!confirm('確定要重置？逐字稿和 AI 對話都會清除。')) return;
+
+async function genSummary() {
+  if (trans.length === 0 || thinking) return;
+  thinking = true; setSumBtn();
+  const sumMsg = { role:'assistant', content:'' };
+  msgs.push({ role:'user', content:'@AI 請根據目前的逐字稿，生成完整的會議總結，包含：1.討論摘要 2.重要決議 3.待辦事項', images:[] });
+  msgs.push(sumMsg);
+  renderChat();
+  try {
+    await streamGemini(buildSysPrompt(), buildGeminiMsgs(), chunk => {
+      sumMsg.content += chunk;
+      renderChat();
+    });
+  } catch(e) {
+    sumMsg.content = '❌ 錯誤：' + e.message;
+    renderChat();
+  }
+  thinking = false; setSumBtn();
+}
+
+function buildSysPrompt() {
+  let s = '你是一個專業的會議 AI 助手，使用繁體中文回答。';
+  if (agenda) s += '\n\n【會議議程】\n' + agenda;
+  if (bgInfo)  s += '\n\n【背景資料】\n' + bgInfo;
+  if (participants) s += '\n\n【參與者】' + participants;
+  if (uploadedData) s += '\n\n【上傳資料】\n' + uploadedData.slice(0, 8000);
+  const transTxt = trans.slice(-30).map(t => t.t + ' ' + t.text).join('\n');
+  if (transTxt) s += '\n\n【即時逐字稿（最近30條）】\n' + transTxt;
+  s += '\n\n根據以上資料回答問題。回答要簡潔、結構化。';
+  return s;
+}
+
+function buildGeminiMsgs() {
+  // Convert msgs to Gemini format, exclude the last empty assistant msg
+  const history = msgs.filter(m => m.content || (m.images && m.images.length > 0));
+  return history.map(m => {
+    const parts = [];
+    if (m.images) m.images.forEach(img => parts.push({inline_data:{mime_type:img.type, data:img.data}}));
+    if (m.content) parts.push({text: m.content});
+    return { role: m.role === 'assistant' ? 'model' : 'user', parts };
+  });
+}
+
+// ═══ Gemini API ═══
+async function streamGemini(sysPrompt, contents, onChunk) {
+  if (!contents || contents.length === 0) {
+    throw new Error('沒有訊息可以送出');
+  }
+  // Gemini requires alternating user/model, ensure starts with user
+  // Also remove trailing model messages (the empty placeholder)
+  while (contents.length > 0 && contents[contents.length-1].role === 'model' && 
+         contents[contents.length-1].parts.every(p => !p.text || p.text === '')) {
+    contents.pop();
+  }
+  if (contents.length === 0) throw new Error('沒有有效訊息');
+
+  const body = {
+    contents,
+    generationConfig: { maxOutputTokens: 2048 }
+  };
+  if (sysPrompt) body.system_instruction = { parts: [{text: sysPrompt}] };
+
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=' + apiKey;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(()=>({error:{message:'HTTP '+res.status}}));
+    throw new Error(err.error?.message || 'API 錯誤');
+  }
+
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = '';
+  while (true) {
+    const {done, value} = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, {stream:true});
+    const lines = buf.split('\n');
+    buf = lines.pop() || '';
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      const json = line.slice(6).trim();
+      if (json === '[DONE]') return;
+      try {
+        const d = JSON.parse(json);
+        const txt = d.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (txt) onChunk(txt);
+      } catch(e) {}
+    }
+  }
+}
+
+// ═══ Render ═══
+function renderTrans() {
+  const el = document.getElementById('trans-lines');
+  if (trans.length === 0) {
+    el.innerHTML = '<p style="color:var(--t3);font-size:14px">點擊右上角麥克風開始錄音</p>';
+    return;
+  }
+  el.innerHTML = trans.slice(-50).map(l =>
+    '<div class="trans-line"><span class="trans-time">' + l.t + '</span>' + h(l.text) + '</div>'
+  ).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function renderChat() {
+  const el = document.getElementById('chat-msgs');
+  if (msgs.length === 0) {
+    el.innerHTML = '<p style="color:var(--t3);font-size:14px;padding:8px 0">還沒有對話。輸入 @AI 開頭來提問。</p>';
+    return;
+  }
+  el.innerHTML = msgs.filter(m => m.content || (m.images && m.images.length > 0)).map(m => {
+    let inner = '';
+    if (m.images) m.images.forEach(img => { inner += '<img src="' + img.src + '">'; });
+    if (m.role === 'assistant' && !m.content && thinking) {
+      return '<div class="brow ai"><div class="bubble thinking">思考中…</div></div>';
+    }
+    if (m.content) inner += md2html(m.content);
+    return '<div class="brow ' + (m.role==='user'?'user':'ai') + '"><div class="bubble ' + (m.role==='user'?'user':'ai') + '">' + inner + '</div></div>';
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+  document.getElementById('meeting-body').scrollTop = 99999;
+}
+
+function md2html(s) {
+  return h(s)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/^#{1,3} (.+)$/gm, '<strong>$1</strong>')
+    .replace(/^[-•] (.+)$/gm, '• $1')
+    .replace(/\n/g, '<br>');
+}
+
+function setSumBtn() {
+  document.getElementById('btn-sum').disabled = trans.length === 0 || thinking;
+}
+
+// ═══ Export ═══
+function exportTxt() {
+  const lines = [
+    '===== 會議紀錄 ===== ' + new Date().toLocaleString('zh-TW'),
+    '議程：' + (agenda||'（未填寫）'),
+    '參與者：' + (participants||'（未填寫）'),
+    '',
+    '【逐字稿】',
+    ...trans.map(t => t.t + ' ' + t.text),
+    '',
+    '【AI 對話紀錄】',
+    ...msgs.filter(m=>m.content).map(m => (m.role==='user'?'Q: ':'AI: ') + m.content)
+  ];
+  const blob = new Blob([lines.join('\n')], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'meeting_' + new Date().toISOString().slice(0,10) + '.txt';
+  a.click();
+}
+
+// ═══ Reset ═══
+function resetMtg() {
+  if (!confirm('確定要重置？逐字稿和 AI 對話都會清除。')) return;
   stopRec(); trans=[]; msgs=[]; interim=''; pendingImgs=[];
   renderTrans(); renderChat(); setSumBtn(); renderImgBar();
 }
-function h(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/\n/g,'<br>'); }
+
+// ═══ Utils ═══
+function h(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function now(){ const d=new Date(); return p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds()); }
 function p2(n){ return String(n).padStart(2,'0'); }
 </script>
 </body>
