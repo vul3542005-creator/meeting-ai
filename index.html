@@ -50,14 +50,14 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 .rec-dot{width:10px;height:10px;border-radius:50%;background:var(--t3);display:inline-block;margin-right:6px}
 .rec-dot.on{background:var(--red);animation:blink 1s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.mtg-body{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px}
+.mtg-body{flex:1;overflow:hidden;padding:12px 16px 4px;display:flex;flex-direction:column;gap:8px}
 
 /* ── Transcript ── */
-.trans-card{background:var(--card);border-radius:14px;padding:12px 14px;max-height:180px;overflow-y:auto}
-.trans-card h3{font-size:12px;font-weight:500;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
-.trans-line{font-size:14px;color:var(--t1);line-height:1.6;padding:2px 0}
-.trans-time{font-size:11px;color:var(--t3);margin-right:6px}
-.interim-text{font-size:14px;color:var(--t3);font-style:italic}
+.trans-card{background:var(--card);border-radius:14px;padding:7px 12px;max-height:75px;overflow-y:auto;flex-shrink:0}
+.trans-card h3{font-size:10px;font-weight:500;color:var(--t3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em}
+.trans-line{font-size:12px;color:var(--t1);line-height:1.5;padding:1px 0}
+.trans-time{font-size:10px;color:var(--t3);margin-right:5px}
+.interim-text{font-size:12px;color:var(--t3);font-style:italic}
 
 /* ── Chat ── */
 .chat-card{background:var(--card);border-radius:14px;flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
@@ -82,6 +82,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 .ico-btn{width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:var(--bg)}
 .ico-btn.blue{background:var(--blue);color:#fff}
 .ico-btn.red{background:var(--red);color:#fff}
+.ico-btn.green{background:var(--green);color:#fff}
 
 /* ── Buttons ── */
 .btn{padding:13px 0;border:none;border-radius:14px;font-size:16px;font-weight:500;cursor:pointer;width:100%;font-family:var(--font)}
@@ -162,8 +163,8 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
       <div id="interim-box"></div>
     </div>
     <div class="chat-card">
-      <h3>AI 對話（輸入 @AI 提問）</h3>
-      <div class="chat-msgs" id="chat-msgs"><p style="color:var(--t3);font-size:14px;padding:8px 0">還沒有對話。輸入 @AI 開頭來提問。</p></div>
+      <h3>AI 對話</h3>
+      <div class="chat-msgs" id="chat-msgs"><p style="color:var(--t3);font-size:14px;padding:8px 0">還沒有對話。直接輸入問題，或按 🎙️ 說話。</p></div>
     </div>
   </div>
   <div class="img-bar" id="img-bar"></div>
@@ -175,7 +176,11 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
   <div class="input-bar">
     <button class="ico-btn" onclick="document.getElementById('chat-img-inp').click()" title="上傳圖片">📷</button>
     <input id="chat-img-inp" type="file" accept="image/*" multiple hidden onchange="addChatImgs(this.files)">
-    <textarea id="chat-inp" rows="1" placeholder="@AI 請問..." oninput="autoGrow(this)" onkeydown="chatKeydown(event)"></textarea>
+    <textarea id="chat-inp" rows="1" placeholder="輸入問題，或按住 🎙️ 說話..." oninput="autoGrow(this)" onkeydown="chatKeydown(event)"></textarea>
+    <button class="ico-btn green" id="btn-chat-voice"
+      ontouchstart="startChatVoice(event)" ontouchend="stopChatVoice(event)"
+      onmousedown="startChatVoice(event)" onmouseup="stopChatVoice(event)" onmouseleave="stopChatVoice(event)"
+      title="按住說話">🎙️</button>
     <button class="ico-btn blue" onclick="sendChat()">↑</button>
   </div>
 </div>
@@ -293,9 +298,9 @@ function toBase64(f) {
   });
 }
 
-async function ocrImage(b64, mimeType) {
+async function ocrImage(b64, mimeType, model='gemini-2.0-flash') {
   const resp = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey,
+    'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey,
     {
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -311,7 +316,13 @@ async function ocrImage(b64, mimeType) {
     }
   );
   const data = await resp.json();
-  if (!resp.ok) throw new Error(data.error?.message || '辨識失敗');
+  if (!resp.ok) {
+    const msg = data.error?.message || '辨識失敗';
+    if ((resp.status === 429 || resp.status === 503 || msg.includes('demand')) && model === 'gemini-2.0-flash') {
+      return ocrImage(b64, mimeType, 'gemini-2.5-flash');
+    }
+    throw new Error(msg);
+  }
   return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
@@ -501,12 +512,11 @@ function buildGeminiMsgs() {
 }
 
 // ═══ Gemini API ═══
-async function streamGemini(sysPrompt, contents, onChunk) {
+// 預設 gemini-2.0-flash（無限 RPD），失敗自動降回 gemini-2.5-flash
+async function streamGemini(sysPrompt, contents, onChunk, model='gemini-2.0-flash') {
   if (!contents || contents.length === 0) {
     throw new Error('沒有訊息可以送出');
   }
-  // Gemini requires alternating user/model, ensure starts with user
-  // Also remove trailing model messages (the empty placeholder)
   while (contents.length > 0 && contents[contents.length-1].role === 'model' && 
          contents[contents.length-1].parts.every(p => !p.text || p.text === '')) {
     contents.pop();
@@ -519,7 +529,7 @@ async function streamGemini(sysPrompt, contents, onChunk) {
   };
   if (sysPrompt) body.system_instruction = { parts: [{text: sysPrompt}] };
 
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=' + apiKey;
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':streamGenerateContent?alt=sse&key=' + apiKey;
   const res = await fetch(url, {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
@@ -528,7 +538,13 @@ async function streamGemini(sysPrompt, contents, onChunk) {
 
   if (!res.ok) {
     const err = await res.json().catch(()=>({error:{message:'HTTP '+res.status}}));
-    throw new Error(err.error?.message || 'API 錯誤');
+    const msg = err.error?.message || 'API 錯誤';
+    // 若 2.0-flash 過載，自動用 2.5-flash 重試
+    if ((res.status === 429 || res.status === 503 || msg.includes('demand') || msg.includes('overload'))
+        && model === 'gemini-2.0-flash') {
+      return streamGemini(sysPrompt, contents, onChunk, 'gemini-2.5-flash');
+    }
+    throw new Error(msg);
   }
 
   const reader = res.body.getReader();
@@ -569,7 +585,7 @@ function renderTrans() {
 function renderChat() {
   const el = document.getElementById('chat-msgs');
   if (msgs.length === 0) {
-    el.innerHTML = '<p style="color:var(--t3);font-size:14px;padding:8px 0">還沒有對話。輸入 @AI 開頭來提問。</p>';
+    el.innerHTML = '<p style="color:var(--t3);font-size:14px;padding:8px 0">還沒有對話。直接輸入問題，或按住 🎙️ 說話。</p>';
     return;
   }
   el.innerHTML = msgs.filter(m => m.content || (m.images && m.images.length > 0)).map(m => {
@@ -622,6 +638,68 @@ function resetMtg() {
   if (!confirm('確定要重置？逐字稿和 AI 對話都會清除。')) return;
   stopRec(); trans=[]; msgs=[]; interim=''; pendingImgs=[];
   renderTrans(); renderChat(); setSumBtn(); renderImgBar();
+}
+
+// ═══ Voice Query（按住說話輸入到聊天框）═══
+let chatVoiceRec = null;
+let chatVoiceActive = false;
+let chatVoiceFinal = '';
+
+function startChatVoice(e) {
+  e.preventDefault();
+  if (chatVoiceActive) return;
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) { alert('此瀏覽器不支援語音辨識，請使用 Chrome'); return; }
+
+  chatVoiceActive = true;
+  chatVoiceFinal = '';
+  const btn = document.getElementById('btn-chat-voice');
+  btn.classList.remove('green');
+  btn.classList.add('red');
+  btn.textContent = '🔴';
+
+  chatVoiceRec = new SpeechRec();
+  chatVoiceRec.lang = 'zh-TW';
+  chatVoiceRec.continuous = true;
+  chatVoiceRec.interimResults = true;
+
+  chatVoiceRec.onresult = e => {
+    let fin = '', intr = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) fin += e.results[i][0].transcript;
+      else intr += e.results[i][0].transcript;
+    }
+    if (fin) chatVoiceFinal += fin;
+    const inp = document.getElementById('chat-inp');
+    inp.value = chatVoiceFinal + (intr ? intr : '');
+    autoGrow(inp);
+  };
+
+  chatVoiceRec.onend = () => {
+    // 辨識結束後寫入最終結果
+    const inp = document.getElementById('chat-inp');
+    inp.value = chatVoiceFinal;
+    autoGrow(inp);
+    inp.focus();
+    chatVoiceActive = false;
+    chatVoiceRec = null;
+    const btn = document.getElementById('btn-chat-voice');
+    btn.classList.remove('red');
+    btn.classList.add('green');
+    btn.textContent = '🎙️';
+  };
+
+  chatVoiceRec.onerror = e => {
+    if (e.error !== 'no-speech') console.warn('Chat voice error:', e.error);
+  };
+
+  chatVoiceRec.start();
+}
+
+function stopChatVoice(e) {
+  if (!chatVoiceActive || !chatVoiceRec) return;
+  if (e) e.preventDefault();
+  chatVoiceRec.stop(); // 觸發 onend 寫入最終結果
 }
 
 // ═══ Utils ═══
