@@ -107,7 +107,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
   <div class="logo">🎙️</div>
   <h1>會議 AI 助手</h1>
   <p>請輸入你的 Google Gemini API Key<br>存在瀏覽器中，不會上傳到任何伺服器</p>
-  <input id="inp-key" type="password" placeholder="AIzaSy..." autocomplete="off">
+  <input id="inp-key" type="password" placeholder="貼上你的 API Key..." autocomplete="off">
   <p class="err" id="key-err"></p>
   <button class="btn btn-blue" onclick="saveKey()">開始使用</button>
   <p class="note">取得免費 API Key：<a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a></p>
@@ -209,8 +209,8 @@ function showScreen(id) {
 // ═══ API Key ═══
 function saveKey() {
   const k = document.getElementById('inp-key').value.trim();
-  if (!k.startsWith('AIzaSy') && !k.startsWith('AIza')) {
-    document.getElementById('key-err').textContent = '格式看起來不對，Gemini Key 通常以 AIzaSy 開頭';
+  if (k.length < 20) {
+    document.getElementById('key-err').textContent = 'Key 太短，請確認是否完整複製';
     return;
   }
   apiKey = k;
