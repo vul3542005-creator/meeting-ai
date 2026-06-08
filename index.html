@@ -26,59 +26,43 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 #s-key .note{font-size:12px;color:var(--t3);text-align:center}
 #s-key .note a{color:var(--blue);text-decoration:none}
 
-/* ── Main / tabs ── */
-#s-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.tab-bar{display:flex;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0}
-.tab-btn{flex:1;padding:12px 0;border:none;background:none;font-size:15px;font-weight:500;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;font-family:var(--font)}
-.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue)}
-.tab-pane{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
-.tab-pane[hidden]{display:none!important}
-
-/* ── Setup tab ── */
+/* ── Setup screen ── */
+#s-setup{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.setup-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 0}
+.setup-hd h2{font-size:18px;font-weight:600}
 .setup-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
-.s-card{background:var(--card);border-radius:14px;padding:14px 16px}
-.s-card label{display:block;font-size:13px;font-weight:500;color:var(--t2);margin-bottom:6px}
-.s-card textarea{width:100%;border:none;outline:none;font-size:15px;color:var(--t1);resize:none;background:transparent;font-family:var(--font);line-height:1.5}
-.s-card input[type=text]{width:100%;border:none;outline:none;font-size:15px;color:var(--t1);background:transparent;font-family:var(--font)}
-.data-preview{font-size:13px;color:var(--t2);background:var(--bg);border-radius:10px;padding:10px 12px;line-height:1.5;max-height:90px;overflow:hidden;white-space:pre-wrap;word-break:break-all;margin-bottom:6px}
-.upload-btn{width:100%;padding:13px;border:1.5px dashed var(--border);border-radius:12px;background:var(--bg);color:var(--t2);font-size:15px;cursor:pointer;font-family:var(--font);text-align:center}
-.file-badges{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
-.badge{padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500}
-.badge-g{background:#e8f8ee;color:#1a7a3a}
-.badge-o{background:#fff3e0;color:#b45309}
-.char-count{font-size:12px;color:var(--t3);margin-top:8px;text-align:right}
-.file-list{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
-.file-tag{display:flex;align-items:center;gap:8px;font-size:13px;background:var(--bg);padding:6px 10px;border-radius:8px}
-.file-tag span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--t1)}
+.card{background:var(--card);border-radius:14px;padding:14px 16px}
+.card label{display:block;font-size:13px;font-weight:500;color:var(--t2);margin-bottom:6px}
+.card textarea{width:100%;border:none;outline:none;font-size:15px;color:var(--t1);resize:none;background:transparent;font-family:var(--font);line-height:1.5}
+.card input[type=text]{width:100%;border:none;outline:none;font-size:15px;color:var(--t1);background:transparent;font-family:var(--font)}
+.upload-zone{border:1.5px dashed var(--border);border-radius:12px;padding:14px;text-align:center;cursor:pointer;background:var(--bg)}
+.upload-zone p{font-size:13px;color:var(--t2);margin-top:4px}
+.file-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.file-tag{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t1);background:var(--bg);padding:6px 10px;border-radius:8px}
+.file-tag span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .file-tag .del{cursor:pointer;color:var(--t3);font-size:16px;flex-shrink:0}
-.setup-footer{padding:10px 16px 20px;display:flex;flex-direction:column;gap:8px}
+.setup-footer{padding:12px 16px 24px;display:flex;gap:10px}
 
-/* ── Meeting tab ── */
-.mtg-hd{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--card);flex-shrink:0}
+/* ── Meeting screen ── */
+#s-mtg{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.mtg-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--card);flex-shrink:0}
 .mtg-hd h2{font-size:16px;font-weight:600}
-.rec-indicator{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--t3);margin-right:6px;vertical-align:middle;transition:background .3s}
-.rec-indicator.on{background:var(--red);animation:blink 1s infinite}
+.rec-dot{width:10px;height:10px;border-radius:50%;background:var(--t3);display:inline-block;margin-right:6px}
+.rec-dot.on{background:var(--red);animation:blink 1s infinite}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.rec-label{font-size:13px;color:var(--t2);vertical-align:middle}
-
-/* ── Recording circle button ── */
-.rec-btn{width:40px;height:40px;border-radius:50%;background:var(--bg);border:2px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,border-color .2s}
-.rec-btn.on{background:var(--red);border-color:var(--red)}
-.rec-dot{width:16px;height:16px;border-radius:50%;background:var(--t3);transition:background .2s}
-.rec-btn.on .rec-dot{background:#fff}
+.mtg-body{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px}
 
 /* ── Transcript ── */
-.mtg-body{flex:1;overflow:hidden;padding:8px 16px 4px;display:flex;flex-direction:column;gap:8px}
-.trans-card{background:var(--card);border-radius:14px;padding:7px 12px;max-height:75px;overflow-y:auto;flex-shrink:0}
-.trans-card h3{font-size:10px;font-weight:500;color:var(--t3);margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em}
-.trans-line{font-size:12px;color:var(--t1);line-height:1.5;padding:1px 0}
-.trans-time{font-size:10px;color:var(--t3);margin-right:5px}
-.interim-text{font-size:12px;color:var(--t3);font-style:italic}
+.trans-card{background:var(--card);border-radius:14px;padding:12px 14px;max-height:180px;overflow-y:auto}
+.trans-card h3{font-size:12px;font-weight:500;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
+.trans-line{font-size:14px;color:var(--t1);line-height:1.6;padding:2px 0}
+.trans-time{font-size:11px;color:var(--t3);margin-right:6px}
+.interim-text{font-size:14px;color:var(--t3);font-style:italic}
 
 /* ── Chat ── */
 .chat-card{background:var(--card);border-radius:14px;flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
-.chat-card h3{font-size:12px;font-weight:500;color:var(--t3);padding:10px 14px 0;text-transform:uppercase;letter-spacing:.04em}
-.chat-msgs{flex:1;overflow-y:auto;padding:6px 14px 4px;display:flex;flex-direction:column;gap:10px}
+.chat-card h3{font-size:12px;font-weight:500;color:var(--t3);padding:12px 14px 0;text-transform:uppercase;letter-spacing:.04em}
+.chat-msgs{flex:1;overflow-y:auto;padding:8px 14px 4px;display:flex;flex-direction:column;gap:10px}
 .brow{display:flex;gap:8px}
 .brow.user{flex-direction:row-reverse}
 .bubble{max-width:85%;padding:10px 13px;border-radius:18px;font-size:14px;line-height:1.6;word-break:break-word}
@@ -86,31 +70,41 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 .bubble.ai{background:var(--bg);color:var(--t1);border-bottom-left-radius:4px}
 .bubble.thinking{background:var(--bg);color:var(--t3);font-style:italic}
 .bubble img{max-width:100%;border-radius:8px;margin-bottom:6px;display:block}
-.img-bar{padding:4px 14px;display:flex;gap:6px;flex-wrap:wrap}
-.img-thumb{position:relative;width:48px;height:48px}
-.img-thumb img{width:48px;height:48px;object-fit:cover;border-radius:8px}
+.img-bar{padding:6px 14px;display:flex;gap:6px;flex-wrap:wrap}
+.img-thumb{position:relative;width:52px;height:52px}
+.img-thumb img{width:52px;height:52px;object-fit:cover;border-radius:8px}
 .img-thumb .rm{position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--t2);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 
 /* ── Input bar ── */
-.input-bar{padding:6px 12px 14px;display:flex;gap:8px;align-items:flex-end;flex-shrink:0;border-top:1px solid var(--border);background:var(--card)}
+.input-bar{padding:8px 12px 16px;display:flex;gap:8px;align-items:flex-end;flex-shrink:0;border-top:1px solid var(--border);background:var(--card)}
 .input-bar textarea{flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:20px;font-size:15px;outline:none;resize:none;max-height:100px;font-family:var(--font);line-height:1.4;background:var(--bg)}
 .input-bar textarea:focus{border-color:var(--blue)}
 .ico-btn{width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:var(--bg)}
 .ico-btn.blue{background:var(--blue);color:#fff}
 .ico-btn.red{background:var(--red);color:#fff}
-.ico-btn.green{background:var(--green);color:#fff}
 
 /* ── Buttons ── */
 .btn{padding:13px 0;border:none;border-radius:14px;font-size:16px;font-weight:500;cursor:pointer;width:100%;font-family:var(--font)}
 .btn-blue{background:var(--blue);color:#fff}
-.mtg-actions{padding:4px 16px 6px;display:flex;gap:8px}
-.btn-sm{padding:7px 14px;border-radius:10px;font-size:13px;font-weight:500;border:none;cursor:pointer;font-family:var(--font)}
+.btn-gray{background:var(--bg);color:var(--t1);border:1px solid var(--border)}
+.btn-red{background:#fff5f5;color:var(--red);border:1px solid #fcd0d0}
+.btn-sm{padding:9px 16px;border-radius:10px;font-size:14px;font-weight:500;border:none;cursor:pointer;font-family:var(--font)}
+.mtg-actions{display:flex;gap:8px;padding:0 0 8px}
 .mtg-actions .btn-sm{flex:1}
+
+/* ── Security bar ── */
+.sec-bar{font-size:11px;color:#7a6002;text-align:center;padding:3px 12px;background:#fff8dc;flex-shrink:0;border-bottom:1px solid #ffe082}
+
+/* ── Quick prompts ── */
+.qp-wrap{padding:4px 10px 2px;display:flex;gap:5px;flex-wrap:wrap}
+.qp-chip{font-size:12px;padding:4px 10px;border-radius:14px;border:1px solid var(--border);background:var(--bg);cursor:pointer;color:var(--t2);font-family:var(--font);white-space:nowrap;transition:background .15s,color .15s}
+.qp-chip:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
 
 /* ── Misc ── */
 .err{color:var(--red);font-size:13px;text-align:center}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff3;border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
 [hidden]{display:none!important}
-
 </style>
 </head>
 <body>
@@ -121,101 +115,88 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
   <div class="logo">🎙️</div>
   <h1>會議 AI 助手</h1>
   <p>請輸入你的 Google Gemini API Key<br>存在瀏覽器中，不會上傳到任何伺服器</p>
-  <input id="inp-key" type="password" placeholder="貼上你的 API Key..." autocomplete="off">
+  <input id="inp-key" type="password" placeholder="貼上你的 API Key…" autocomplete="off">
   <p class="err" id="key-err"></p>
   <button class="btn btn-blue" onclick="saveKey()">開始使用</button>
   <p class="note">取得免費 API Key：<a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a></p>
 </div>
 
-<!-- ═══ Main (Tabbed) ═══ -->
-<div id="s-main" hidden>
-  <div class="tab-bar">
-    <button class="tab-btn active" id="tab-btn-setup" onclick="switchTab('setup')">會議設定</button>
-    <button class="tab-btn" id="tab-btn-mtg" onclick="switchTab('mtg')">開會中</button>
+<!-- ═══ Screen 2: Meeting Setup ═══ -->
+<div id="s-setup" hidden>
+  <div class="setup-hd">
+    <button onclick="goKey()" style="background:none;border:none;color:var(--blue);font-size:15px;cursor:pointer">← 返回</button>
+    <h2>會議設定</h2>
+    <div style="width:50px"></div>
   </div>
-
-  <!-- ─ Tab: 會議設定 ─ -->
-  <div id="tab-setup" class="tab-pane">
-    <div class="setup-body">
-      <div class="s-card">
-        <label>會議前資料</label>
-        <div id="data-preview" class="data-preview" hidden></div>
-        <div id="char-count" class="char-count" hidden></div>
-      </div>
-      <div class="s-card">
-        <label>議程</label>
-        <textarea id="inp-agenda" rows="3" placeholder="1. 產品方向討論&#10;2. 預算分配&#10;3. 待辦確認"></textarea>
-      </div>
-      <div class="s-card">
-        <label>背景資料 / 待決議事項</label>
-        <textarea id="inp-bg" rows="3" placeholder="上次會議決議、需要解決的問題等"></textarea>
-      </div>
-      <div class="s-card">
-        <label>參與者</label>
-        <input id="inp-ptcp" type="text" placeholder="王、李、張">
-      </div>
-      <div class="s-card">
-        <div class="file-list" id="file-list"></div>
-        <button class="upload-btn" onclick="document.getElementById('file-inp').click()">⬆ 上傳會議資料</button>
+  <div class="setup-body">
+    <div class="card">
+      <label>議程</label>
+      <textarea id="inp-agenda" rows="3" placeholder="1. 產品方向討論&#10;2. 預算分配&#10;3. 待辦事項確認"></textarea>
+    </div>
+    <div class="card">
+      <label>背景資料 / 待決議事項</label>
+      <textarea id="inp-bg" rows="3" placeholder="上次會議決議、需要解決的問題等"></textarea>
+    </div>
+    <div class="card">
+      <label>參與者</label>
+      <input id="inp-ptcp" type="text" placeholder="王、李、張、AI 助手">
+    </div>
+    <div class="card">
+      <label>上傳會議資料（選填）</label>
+      <div class="upload-zone" onclick="document.getElementById('file-inp').click()">
+        <div style="font-size:28px">📎</div>
+        <p>點擊上傳<br>支援：圖片、Excel、Word、TXT</p>
         <input id="file-inp" type="file" accept="image/*,.xlsx,.xls,.docx,.txt" multiple hidden onchange="handleFiles(this.files)">
-        <div class="file-badges">
-          <span class="badge badge-g">Excel .xlsx</span>
-          <span class="badge badge-g">Word .docx</span>
-          <span class="badge badge-g">文字 .txt</span>
-          <span class="badge badge-o">圖片（需 API 額度）</span>
-        </div>
       </div>
-    </div>
-    <div class="setup-footer">
-      <button class="btn btn-blue" onclick="goMeeting()">進入會議 →</button>
-      <button style="background:none;border:none;color:var(--t3);font-size:14px;cursor:pointer;font-family:var(--font);padding:4px 0" onclick="goKey()">更換 API Key</button>
+      <div class="file-list" id="file-list"></div>
     </div>
   </div>
+  <div class="setup-footer">
+    <button class="btn btn-blue" onclick="startMeeting()">✅ 開始會議</button>
+  </div>
+</div>
 
-  <!-- ─ Tab: 開會中 ─ -->
-  <div id="tab-mtg" class="tab-pane" hidden>
-    <div class="mtg-hd">
-      <span>
-        <span class="rec-indicator" id="rec-indicator"></span>
-        <span class="rec-label" id="rec-label">未錄音</span>
-      </span>
-      <h2>會議進行中</h2>
-      <button class="rec-btn" id="btn-rec" onclick="toggleRec()"><span class="rec-dot"></span></button>
+<!-- ═══ Screen 3: Meeting ═══ -->
+<div id="s-mtg" hidden>
+  <div class="mtg-hd">
+    <span><span class="rec-dot" id="rec-dot"></span><span id="rec-label">未錄音</span></span>
+    <h2>會議進行中</h2>
+    <button onclick="toggleRec()" id="btn-rec" style="background:none;border:none;font-size:22px;cursor:pointer">🎤</button>
+  </div>
+  <!-- 資安提示 -->
+  <div class="sec-bar">🔒 @AI 功能會將部分逐字稿傳送至 Google 伺服器進行分析，請注意資訊安全</div>
+  <div class="mtg-body" id="meeting-body">
+    <div class="trans-card" id="trans-card">
+      <h3>即時轉錄</h3>
+      <div id="trans-lines"><p style="color:var(--t3);font-size:14px">點擊右上角麥克風開始錄音</p></div>
+      <div id="interim-box"></div>
     </div>
-    <div class="mtg-body" id="meeting-body">
-      <div class="trans-card" id="trans-card">
-        <h3>即時轉錄</h3>
-        <div id="trans-lines"><p style="color:var(--t3);font-size:13px">點擊右上角按鈕開始錄音</p></div>
-        <div id="interim-box"></div>
-      </div>
-      <div class="chat-card">
-        <h3>AI 對話</h3>
-        <div class="chat-msgs" id="chat-msgs">
-          <p style="color:var(--t3);font-size:14px;padding:8px 0">直接輸入問題，或按住 🎙️ 說話。</p>
-        </div>
-      </div>
+    <div class="chat-card">
+      <h3>AI 對話</h3>
+      <div class="qp-wrap" id="qp-wrap"></div>
+      <div class="chat-msgs" id="chat-msgs"><p style="color:var(--t3);font-size:14px;padding:8px 0">輸入問題，或點擊上方快速提示</p></div>
     </div>
-    <div class="img-bar" id="img-bar"></div>
-    <div class="mtg-actions">
-      <button class="btn-sm" id="btn-sum" style="background:#f0f7ff;color:var(--blue);border:1px solid #c0d8ff" onclick="genSummary()" disabled>📋 會議總結</button>
-      <button class="btn-sm" style="background:var(--bg);color:var(--t2);border:1px solid var(--border)" onclick="exportTxt()">💾 匯出</button>
-    </div>
-    <div class="input-bar">
-      <button class="ico-btn" onclick="document.getElementById('chat-img-inp').click()" title="上傳圖片">📷</button>
-      <input id="chat-img-inp" type="file" accept="image/*" multiple hidden onchange="addChatImgs(this.files)">
-      <textarea id="chat-inp" rows="1" placeholder="輸入問題，或按住 🎙️ 說話..." oninput="autoGrow(this)" onkeydown="chatKeydown(event)"></textarea>
-      <button class="ico-btn green" id="btn-chat-voice"
-        ontouchstart="startChatVoice(event)" ontouchend="stopChatVoice(event)"
-        onmousedown="startChatVoice(event)" onmouseup="stopChatVoice(event)" onmouseleave="stopChatVoice(event)"
-        title="按住說話">🎙️</button>
-      <button class="ico-btn blue" onclick="sendChat()">↑</button>
-    </div>
+  </div>
+  <div class="img-bar" id="img-bar"></div>
+  <div class="mtg-actions" id="mtg-actions" style="padding:0 16px 0">
+    <button class="btn-sm" id="btn-sum" style="background:#f0f7ff;color:var(--blue);border:1px solid #c0d8ff" onclick="genSummary()" disabled>📋 總結逐字稿</button>
+    <button class="btn-sm" id="btn-export" style="background:var(--bg);color:var(--t2);border:1px solid var(--border)" onclick="exportMeeting()">💾 匯出</button>
+    <button class="btn-sm" style="background:#fff5f5;color:var(--red);border:1px solid #fcd0d0" onclick="resetMtg()">🔄 重置</button>
+  </div>
+  <div class="input-bar">
+    <button class="ico-btn" onclick="document.getElementById('chat-img-inp').click()" title="上傳圖片">📷</button>
+    <input id="chat-img-inp" type="file" accept="image/*" multiple hidden onchange="addChatImgs(this.files)">
+    <button id="btn-chat-mic" class="ico-btn"
+      onmousedown="chatRecStart(event)" onmouseup="chatRecStop(event)" onmouseleave="chatRecStop(event)"
+      ontouchstart="chatRecStart(event)" ontouchend="chatRecStop(event)" ontouchcancel="chatRecStop(event)"
+      title="按住說話">🎤</button>
+    <textarea id="chat-inp" rows="1" placeholder="問 AI（例：整理重點、待辦事項）" oninput="autoGrow(this)" onkeydown="chatKeydown(event)"></textarea>
+    <button class="ico-btn blue" onclick="sendChat()">↑</button>
   </div>
 </div>
 
 </div><!-- #app -->
 <script>
-
 // ═══ State ═══
 const KEY_STORE = 'gemini_api_key';
 let apiKey = localStorage.getItem(KEY_STORE) || '';
@@ -223,11 +204,19 @@ let agenda='', bgInfo='', participants='', uploadedData='';
 let trans=[], msgs=[], interim='', pendingImgs=[], thinking=false;
 let recognition=null, isRecording=false;
 let uploadedFiles=[];
+let chatRec=null, chatRecFinal='';
+
+const QUICK_PROMPTS = [
+  '📋 整理目前討論重點',
+  '✅ 列出所有待辦事項',
+  '📊 整理重要決議',
+  '❓ 剛才討論了什麼結論？'
+];
 
 // ═══ Init ═══
 window.onload = () => {
   if (apiKey) {
-    showScreen('s-main');
+    showScreen('s-setup');
     document.getElementById('inp-key').value = apiKey;
   } else {
     showScreen('s-key');
@@ -235,16 +224,8 @@ window.onload = () => {
 };
 
 function showScreen(id) {
-  ['s-key','s-main'].forEach(s => {
+  ['s-key','s-setup','s-mtg'].forEach(s => {
     document.getElementById(s).hidden = (s !== id);
-  });
-}
-
-function switchTab(tab) {
-  if (tab === 'mtg') saveSettings();
-  ['setup','mtg'].forEach(t => {
-    document.getElementById('tab-' + t).hidden = (t !== tab);
-    document.getElementById('tab-btn-' + t).classList.toggle('active', t === tab);
   });
 }
 
@@ -252,51 +233,21 @@ function switchTab(tab) {
 function saveKey() {
   const k = document.getElementById('inp-key').value.trim();
   if (k.length < 20) {
-    document.getElementById('key-err').textContent = 'Key 太短，請確認是否完整複製';
+    document.getElementById('key-err').textContent = 'API Key 太短，格式可能有誤，請重新確認';
     return;
   }
   apiKey = k;
   localStorage.setItem(KEY_STORE, k);
   document.getElementById('key-err').textContent = '';
-  showScreen('s-main');
+  showScreen('s-setup');
 }
 
-function goKey() { showScreen('s-key'); }
-
-// ═══ Settings ═══
-function saveSettings() {
-  agenda = document.getElementById('inp-agenda').value.trim();
-  bgInfo = document.getElementById('inp-bg').value.trim();
-  participants = document.getElementById('inp-ptcp').value.trim();
-  uploadedData = uploadedFiles.map(f => '\u300a' + f.name + '\u300b\n' + f.text).join('\n\n');
-  updateCharCount();
+function goKey() {
+  document.getElementById('inp-key').value = apiKey;
+  showScreen('s-key');
 }
 
-function updateCharCount() {
-  const a = document.getElementById('inp-agenda').value.trim();
-  const b = document.getElementById('inp-bg').value.trim();
-  const ud = uploadedFiles.map(f => f.text).join('\n');
-  const allText = [a, b, ud].filter(Boolean).join('\n\n');
-  const countEl = document.getElementById('char-count');
-  const previewEl = document.getElementById('data-preview');
-  if (allText) {
-    countEl.textContent = '\u5df2\u5132\u5b58 ' + allText.length.toLocaleString() + ' \u5b57';
-    countEl.hidden = false;
-    const previewSrc = uploadedFiles.map(f => '\u300a' + f.name + '\u300b\n' + f.text.slice(0,100)).join('\n') || (a || b);
-    previewEl.textContent = previewSrc.slice(0, 250) + (previewSrc.length > 250 ? '...' : '');
-    previewEl.hidden = false;
-  } else {
-    countEl.hidden = true;
-    previewEl.hidden = true;
-  }
-}
-
-function goMeeting() {
-  saveSettings();
-  switchTab('mtg');
-}
-
-// ═══ File Upload ═══
+// ═══ File Upload（Setup）═══
 async function handleFiles(files) {
   for (const f of files) {
     const name = f.name;
@@ -316,10 +267,9 @@ async function handleFiles(files) {
       if (text) {
         uploadedFiles.push({ name, text });
         renderFileList();
-        updateCharCount();
       }
     } catch(e) {
-      alert('\u8b80\u53d6 ' + name + ' \u5931\u6557\uff1a' + e.message);
+      alert('讀取 ' + name + ' 失敗：' + e.message);
     }
   }
   document.getElementById('file-inp').value = '';
@@ -333,8 +283,9 @@ function readExcel(f) {
         const wb = XLSX.read(e.target.result, {type:'array'});
         let out = '';
         wb.SheetNames.forEach(sn => {
-          out += '\u300a' + sn + '\u300b\n';
+          out += '【' + sn + '】\n';
           const rows = XLSX.utils.sheet_to_csv(wb.Sheets[sn]);
+          // Limit to 300 lines to avoid token overflow
           const lines = rows.split('\n').filter(r=>r.replace(/,/g,'').trim()).slice(0,300);
           out += lines.join('\n') + '\n';
         });
@@ -366,9 +317,9 @@ function toBase64(f) {
   });
 }
 
-async function ocrImage(b64, mimeType, model='gemini-2.5-flash') {
+async function ocrImage(b64, mimeType) {
   const resp = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey,
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey,
     {
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -377,42 +328,65 @@ async function ocrImage(b64, mimeType, model='gemini-2.5-flash') {
           role:'user',
           parts:[
             {inline_data:{mime_type:mimeType, data:b64}},
-            {text:'\u8acb\u8fa8\u8b58\u9019\u5f35\u5716\u7247\u4e2d\u6240\u6709\u7684\u6587\u5b57\u5167\u5bb9\uff0c\u4fdd\u6301\u539f\u59cb\u683c\u5f0f\uff0c\u4e0d\u8981\u52a0\u5165\u4efb\u4f55\u8aaa\u660e'}
+            {text:'請辨識這張圖片中所有的文字內容，保持原始格式，不要加入任何說明'}
           ]
         }]
       })
     }
   );
   const data = await resp.json();
-  if (!resp.ok) {
-    const msg = data.error?.message || '\u8fa8\u8b58\u5931\u6557';
-    if ((resp.status === 429 || resp.status === 503 || msg.includes('demand') || msg.includes('unavailable')) && model === 'gemini-2.5-flash') {
-      return ocrImage(b64, mimeType, 'gemini-1.5-flash');
-    }
-    throw new Error(msg);
-  }
+  if (!resp.ok) throw new Error(data.error?.message || '辨識失敗');
   return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
 }
 
 function renderFileList() {
   const el = document.getElementById('file-list');
   el.innerHTML = uploadedFiles.map((f,i) =>
-    '<div class="file-tag"><span>\ud83d\udcc4 ' + h(f.name) + '</span><span class="del" onclick="removeFile(' + i + ')">\u2715</span></div>'
+    '<div class="file-tag"><span>📄 ' + h(f.name) + '</span><span class="del" onclick="removeFile(' + i + ')">✕</span></div>'
   ).join('');
 }
 
 function removeFile(i) {
   uploadedFiles.splice(i, 1);
   renderFileList();
-  updateCharCount();
+}
+
+// ═══ Start Meeting ═══
+function startMeeting() {
+  agenda = document.getElementById('inp-agenda').value.trim();
+  bgInfo = document.getElementById('inp-bg').value.trim();
+  participants = document.getElementById('inp-ptcp').value.trim();
+  uploadedData = uploadedFiles.map(f => '【' + f.name + '】\n' + f.text).join('\n\n');
+  trans=[]; msgs=[]; interim=''; pendingImgs=[];
+  renderTrans(); renderChat(); setSumBtn();
+  showScreen('s-mtg');
+}
+
+// ═══ Quick Prompts ═══
+function renderQP() {
+  const el = document.getElementById('qp-wrap');
+  const hasMsg = msgs.some(m => m.content || (m.images && m.images.length > 0));
+  if (hasMsg) { el.innerHTML = ''; return; }
+  el.innerHTML = QUICK_PROMPTS.map(p =>
+    '<button class="qp-chip" onclick="useQP(\'' + p.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\')">' + h(p) + '</button>'
+  ).join('');
+}
+
+function useQP(txt) {
+  const inp = document.getElementById('chat-inp');
+  inp.value = txt;
+  autoGrow(inp);
+  inp.focus();
 }
 
 // ═══ Speech Recognition ═══
-function toggleRec() { isRecording ? stopRec() : startRec(); }
+function toggleRec() {
+  isRecording ? stopRec() : startRec();
+}
 
 function startRec() {
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRec) { alert('\u6b64\u700f\u89bd\u5668\u4e0d\u652f\u63f4\u8a9e\u97f3\u8fa8\u8b58\uff0c\u8acb\u4f7f\u7528 Chrome'); return; }
+  if (!SpeechRec) { alert('此瀏覽器不支援語音辨識，請使用 Chrome'); return; }
   recognition = new SpeechRec();
   recognition.lang = 'zh-TW';
   recognition.continuous = true;
@@ -423,26 +397,100 @@ function startRec() {
       if (e.results[i].isFinal) fin += e.results[i][0].transcript;
       else intr += e.results[i][0].transcript;
     }
-    if (fin) { trans.push({t: now(), text: fin.trim()}); renderTrans(); setSumBtn(); }
+    if (fin) {
+      trans.push({t: now(), text: fin.trim()});
+      renderTrans();
+      setSumBtn();
+    }
     interim = intr;
     document.getElementById('interim-box').innerHTML = interim
       ? '<div class="interim-text">' + h(interim) + '</div>' : '';
   };
-  recognition.onerror = e => { if (e.error !== 'no-speech') console.warn('SR error:', e.error); };
-  recognition.onend = () => { if (isRecording) recognition.start(); };
+  recognition.onerror = e => {
+    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+      // 麥克風權限被拒，停止錄音
+      isRecording = false;
+      document.getElementById('rec-dot').classList.remove('on');
+      document.getElementById('rec-label').textContent = '麥克風被拒絕';
+      document.getElementById('btn-rec').textContent = '🎤';
+    } else if (e.error !== 'no-speech' && e.error !== 'aborted') {
+      console.warn('SR error:', e.error);
+    }
+  };
+  recognition.onend = () => {
+    // 加入延遲避免 Chrome 重啟競爭條件
+    if (isRecording && recognition) {
+      setTimeout(() => {
+        try { if (recognition && isRecording) recognition.start(); }
+        catch(err) { console.warn('SR restart:', err.message); }
+      }, 300);
+    }
+  };
   recognition.start();
   isRecording = true;
-  document.getElementById('btn-rec').classList.add('on');
-  document.getElementById('rec-indicator').classList.add('on');
-  document.getElementById('rec-label').textContent = '\u9304\u97f3\u4e2d';
+  document.getElementById('rec-dot').classList.add('on');
+  document.getElementById('rec-label').textContent = '錄音中';
+  document.getElementById('btn-rec').textContent = '⏹️';
 }
 
 function stopRec() {
   if (recognition) { recognition.onend=null; recognition.stop(); recognition=null; }
   isRecording = false;
-  document.getElementById('btn-rec').classList.remove('on');
-  document.getElementById('rec-indicator').classList.remove('on');
-  document.getElementById('rec-label').textContent = '\u5df2\u505c\u6b62';
+  document.getElementById('rec-dot').classList.remove('on');
+  document.getElementById('rec-label').textContent = '已停止';
+  document.getElementById('btn-rec').textContent = '🎤';
+}
+
+// ═══ Chat Voice Input（按住說話）═══
+function chatRecStart(e) {
+  e.preventDefault();
+  if (chatRec) return;
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRec) { alert('請使用 Chrome 瀏覽器以使用語音功能'); return; }
+
+  const btn = document.getElementById('btn-chat-mic');
+  const inp = document.getElementById('chat-inp');
+  const baseText = inp.value; // 保留輸入框裡原有的文字
+  chatRecFinal = '';
+
+  chatRec = new SpeechRec();
+  chatRec.lang = 'zh-TW';
+  chatRec.continuous = true;
+  chatRec.interimResults = true;
+
+  chatRec.onresult = e => {
+    let addedFinal = '', intr = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) addedFinal += e.results[i][0].transcript;
+      else intr += e.results[i][0].transcript;
+    }
+    chatRecFinal += addedFinal;
+    inp.value = baseText + chatRecFinal + intr; // 即時顯示（含暫時文字）
+    autoGrow(inp);
+  };
+
+  chatRec.onend = () => {
+    inp.value = baseText + chatRecFinal; // 放開後清掉暫時文字，只留確定的
+    autoGrow(inp);
+    chatRec = null;
+    btn.classList.remove('red');
+    btn.textContent = '🎤';
+  };
+
+  chatRec.onerror = e => {
+    if (e.error !== 'no-speech' && e.error !== 'aborted') console.warn('chatRec:', e.error);
+  };
+
+  chatRec.start();
+  btn.classList.add('red');
+  btn.textContent = '🔴';
+}
+
+function chatRecStop(e) {
+  if (e) e.preventDefault();
+  if (!chatRec) return;
+  try { chatRec.stop(); } catch(err) {}
+  // 清理由 onend 接手
 }
 
 // ═══ Chat ═══
@@ -470,11 +518,14 @@ function addChatImgs(files) {
 function renderImgBar() {
   const el = document.getElementById('img-bar');
   el.innerHTML = pendingImgs.map((img,i) =>
-    '<div class="img-thumb"><img src="' + img.src + '"><span class="rm" onclick="removePendingImg(' + i + ')">\u2715</span></div>'
+    '<div class="img-thumb"><img src="' + img.src + '"><span class="rm" onclick="removePendingImg(' + i + ')">✕</span></div>'
   ).join('');
 }
 
-function removePendingImg(i) { pendingImgs.splice(i, 1); renderImgBar(); }
+function removePendingImg(i) {
+  pendingImgs.splice(i, 1);
+  renderImgBar();
+}
 
 async function sendChat() {
   const inp = document.getElementById('chat-inp');
@@ -482,85 +533,104 @@ async function sendChat() {
   if (!txt && pendingImgs.length === 0) return;
   if (thinking) return;
 
+  if (txt && !txt.includes('@AI') && !txt.includes('@ai')) {
+    // Show hint but still allow sending
+  }
+
   const userMsg = { role:'user', content: txt, images: [...pendingImgs] };
   msgs.push(userMsg);
   pendingImgs = [];
   inp.value = ''; inp.style.height='auto';
-  renderImgBar(); renderChat();
+  renderImgBar();
+  renderChat();
 
-  thinking = true; setSumBtn();
+  thinking = true;
+  setSumBtn();
   const aiMsg = { role:'assistant', content:'' };
-  msgs.push(aiMsg); renderChat();
+  msgs.push(aiMsg);
+  renderChat();
 
   try {
-    await streamGemini(buildSysPrompt(), buildGeminiMsgs(), chunk => {
-      aiMsg.content += chunk; renderChat();
+    const sysPrompt = buildSysPrompt();
+    const geminiMsgs = buildGeminiMsgs();
+    await streamGemini(sysPrompt, geminiMsgs, chunk => {
+      aiMsg.content += chunk;
+      renderChat();
     });
   } catch(e) {
-    aiMsg.content = '\u274c \u932f\u8aa4\uff1a' + e.message; renderChat();
+    aiMsg.content = '❌ 錯誤：' + e.message;
+    renderChat();
   }
-  thinking = false; setSumBtn();
+  thinking = false;
+  setSumBtn();
 }
 
 async function genSummary() {
   if (trans.length === 0 || thinking) return;
   thinking = true; setSumBtn();
   const sumMsg = { role:'assistant', content:'' };
-  msgs.push({ role:'user', content:'\u8acb\u6839\u64da\u76ee\u524d\u7684\u9010\u5b57\u7a3f\uff0c\u751f\u6210\u5b8c\u6574\u7684\u6703\u8b70\u7e3d\u7d50\uff0c\u5305\u542b\uff1a1.\u8a0e\u8ad6\u6458\u8981 2.\u91cd\u8981\u6c7a\u8b70 3.\u5f85\u8fa6\u4e8b\u9805', images:[] });
-  msgs.push(sumMsg); renderChat();
+  msgs.push({ role:'user', content:'請根據目前的逐字稿，生成完整的會議總結，包含：1.討論摘要 2.重要決議 3.待辦事項', images:[] });
+  msgs.push(sumMsg);
+  renderChat();
   try {
     await streamGemini(buildSysPrompt(), buildGeminiMsgs(), chunk => {
-      sumMsg.content += chunk; renderChat();
+      sumMsg.content += chunk;
+      renderChat();
     });
   } catch(e) {
-    sumMsg.content = '\u274c \u932f\u8aa4\uff1a' + e.message; renderChat();
+    sumMsg.content = '❌ 總結失敗：' + e.message + '\n\n請確認：\n• API Key 是否有效\n• 網路連線是否正常';
+    renderChat();
   }
   thinking = false; setSumBtn();
 }
 
 function buildSysPrompt() {
-  // Always read latest values
-  const a = document.getElementById('inp-agenda')?.value.trim() || agenda;
-  const b = document.getElementById('inp-bg')?.value.trim() || bgInfo;
-  const p = document.getElementById('inp-ptcp')?.value.trim() || participants;
-  const ud = uploadedFiles.length
-    ? uploadedFiles.map(f => '\u300a' + f.name + '\u300b\n' + f.text).join('\n\n')
-    : uploadedData;
-
-  let s = '\u4f60\u662f\u4e00\u500b\u5c08\u696d\u7684\u6703\u8b70 AI \u52a9\u624b\uff0c\u4f7f\u7528\u7e41\u9ad4\u4e2d\u6587\u56de\u7b54\u3002';
-  if (a) s += '\n\n\u300a\u6703\u8b70\u8b70\u7a0b\u300b\n' + a;
-  if (b) s += '\n\n\u300a\u80cc\u666f\u8cc7\u6599\u300b\n' + b;
-  if (p) s += '\n\n\u300a\u53c3\u8207\u8005\u300b' + p;
-  if (ud) s += '\n\n\u300a\u4e0a\u50b3\u8cc7\u6599\u300b\n' + ud.slice(0, 8000);
+  let s = '你是一個專業的會議 AI 助手，使用繁體中文回答。';
+  if (agenda) s += '\n\n【會議議程】\n' + agenda;
+  if (bgInfo)  s += '\n\n【背景資料】\n' + bgInfo;
+  if (participants) s += '\n\n【參與者】' + participants;
+  if (uploadedData) s += '\n\n【上傳資料】\n' + uploadedData.slice(0, 8000);
   const transTxt = trans.slice(-30).map(t => t.t + ' ' + t.text).join('\n');
-  if (transTxt) s += '\n\n\u300a\u5373\u6642\u9010\u5b57\u7a3f\uff08\u6700\u8fd130\u689d\uff09\u300b\n' + transTxt;
-  s += '\n\n\u6839\u64da\u4ee5\u4e0a\u8cc7\u6599\u56de\u7b54\u554f\u984c\u3002\u56de\u7b54\u8981\u7c21\u6f54\u3001\u7d50\u69cb\u5316\u3002';
+  if (transTxt) s += '\n\n【即時逐字稿（最近30條）】\n' + transTxt;
+  s += '\n\n根據以上資料回答問題。回答要簡潔、結構化。';
   return s;
 }
 
 function buildGeminiMsgs() {
+  // Filter out empty messages
   const history = msgs.filter(m => m.content || (m.images && m.images.length > 0));
-  return history.map(m => {
-    const parts = [];
-    if (m.images) m.images.forEach(img => parts.push({inline_data:{mime_type:img.type, data:img.data}}));
-    if (m.content) parts.push({text: m.content});
-    return { role: m.role === 'assistant' ? 'model' : 'user', parts };
-  });
+  // Remove trailing empty assistant turns
+  while (history.length && history[history.length-1].role === 'assistant' && !history[history.length-1].content) {
+    history.pop();
+  }
+  // Convert to Gemini format, merging consecutive same-role messages to satisfy API alternation requirement
+  const merged = [];
+  for (const m of history) {
+    const gemRole = m.role === 'assistant' ? 'model' : 'user';
+    if (merged.length && merged[merged.length-1].role === gemRole) {
+      if (m.content) merged[merged.length-1].parts.push({text: m.content});
+    } else {
+      const parts = [];
+      if (m.images) m.images.forEach(img => parts.push({inline_data:{mime_type:img.type, data:img.data}}));
+      if (m.content) parts.push({text: m.content});
+      if (parts.length) merged.push({ role: gemRole, parts });
+    }
+  }
+  return merged;
 }
 
 // ═══ Gemini API ═══
 async function streamGemini(sysPrompt, contents, onChunk, model='gemini-2.5-flash') {
-  if (!contents || contents.length === 0) throw new Error('\u6c92\u6709\u8a0a\u606f\u53ef\u4ee5\u9001\u51fa');
-  while (contents.length > 0 && contents[contents.length-1].role === 'model' &&
-         contents[contents.length-1].parts.every(p => !p.text || p.text === '')) {
-    contents.pop();
-  }
-  if (contents.length === 0) throw new Error('\u6c92\u6709\u6709\u6548\u8a0a\u606f');
+  if (!contents || contents.length === 0) throw new Error('沒有訊息可以送出');
 
-  const body = { contents, generationConfig: { maxOutputTokens: 2048 } };
+  const body = {
+    contents,
+    generationConfig: { maxOutputTokens: 2048 }
+  };
   if (sysPrompt) body.system_instruction = { parts: [{text: sysPrompt}] };
 
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':streamGenerateContent?alt=sse&key=' + apiKey;
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model +
+    ':streamGenerateContent?alt=sse&key=' + apiKey;
   const res = await fetch(url, {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
@@ -568,13 +638,12 @@ async function streamGemini(sysPrompt, contents, onChunk, model='gemini-2.5-flas
   });
 
   if (!res.ok) {
-    const err = await res.json().catch(()=>({error:{message:'HTTP '+res.status}}));
-    const msg = err.error?.message || 'API \u932f\u8aa4';
-    if ((res.status === 429 || res.status === 503 || msg.includes('demand') || msg.includes('unavailable') || msg.includes('no longer'))
-        && model !== 'gemini-1.5-flash') {
+    const err = await res.json().catch(()=>({error:{code:res.status, message:'HTTP '+res.status}}));
+    // 配額超限時自動降級到 1.5-flash
+    if (res.status === 429 && model === 'gemini-2.5-flash') {
       return streamGemini(sysPrompt, contents, onChunk, 'gemini-1.5-flash');
     }
-    throw new Error(msg);
+    throw new Error(err.error?.message || 'API 錯誤 ' + res.status);
   }
 
   const reader = res.body.getReader();
@@ -599,88 +668,45 @@ async function streamGemini(sysPrompt, contents, onChunk, model='gemini-2.5-flas
   }
 }
 
-// ═══ Voice Query ═══
-let chatVoiceRec = null, chatVoiceActive = false, chatVoiceFinal = '';
-
-function startChatVoice(e) {
-  e.preventDefault();
-  if (chatVoiceActive) return;
-  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRec) { alert('\u8acb\u4f7f\u7528 Chrome'); return; }
-  chatVoiceActive = true; chatVoiceFinal = '';
-  const btn = document.getElementById('btn-chat-voice');
-  btn.classList.remove('green'); btn.classList.add('red'); btn.textContent = '\ud83d\udd34';
-
-  chatVoiceRec = new SpeechRec();
-  chatVoiceRec.lang = 'zh-TW';
-  chatVoiceRec.continuous = true;
-  chatVoiceRec.interimResults = true;
-  chatVoiceRec.onresult = e => {
-    let fin='', intr='';
-    for (let i=e.resultIndex; i<e.results.length; i++) {
-      if (e.results[i].isFinal) fin += e.results[i][0].transcript;
-      else intr += e.results[i][0].transcript;
-    }
-    if (fin) chatVoiceFinal += fin;
-    const inp = document.getElementById('chat-inp');
-    inp.value = chatVoiceFinal + intr;
-    autoGrow(inp);
-  };
-  chatVoiceRec.onend = () => {
-    const inp = document.getElementById('chat-inp');
-    inp.value = chatVoiceFinal; autoGrow(inp); inp.focus();
-    chatVoiceActive = false; chatVoiceRec = null;
-    const btn = document.getElementById('btn-chat-voice');
-    btn.classList.remove('red'); btn.classList.add('green'); btn.textContent = '\ud83c\udfa4\ufe0f';
-  };
-  chatVoiceRec.onerror = e => { if (e.error !== 'no-speech') console.warn(e.error); };
-  chatVoiceRec.start();
-}
-
-function stopChatVoice(e) {
-  if (!chatVoiceActive || !chatVoiceRec) return;
-  if (e) e.preventDefault();
-  chatVoiceRec.stop();
-}
-
 // ═══ Render ═══
 function renderTrans() {
   const el = document.getElementById('trans-lines');
   if (trans.length === 0) {
-    el.innerHTML = '<p style="color:var(--t3);font-size:13px">\u9ede\u64ca\u53f3\u4e0a\u89d2\u6309\u9215\u958b\u59cb\u9304\u97f3</p>';
+    el.innerHTML = '<p style="color:var(--t3);font-size:14px">點擊右上角麥克風開始錄音</p>';
     return;
   }
   el.innerHTML = trans.slice(-50).map(l =>
     '<div class="trans-line"><span class="trans-time">' + l.t + '</span>' + h(l.text) + '</div>'
   ).join('');
-  // 捲到最後一行
-  const card = document.getElementById('trans-card');
-  card.scrollTop = card.scrollHeight;
+  el.scrollTop = el.scrollHeight;
 }
 
 function renderChat() {
   const el = document.getElementById('chat-msgs');
-  if (msgs.length === 0) {
-    el.innerHTML = '<p style="color:var(--t3);font-size:14px;padding:8px 0">\u76f4\u63a5\u8f38\u5165\u554f\u984c\uff0c\u6216\u6309\u4f4f \ud83c\udfa4\ufe0f \u8aaa\u8a71\u3002</p>';
+  const filtered = msgs.filter(m => m.content || (m.images && m.images.length > 0));
+  renderQP();
+  if (filtered.length === 0) {
+    el.innerHTML = '<p style="color:var(--t3);font-size:14px;padding:8px 0">輸入問題，或點擊上方快速提示</p>';
     return;
   }
-  el.innerHTML = msgs.filter(m => m.content || (m.images && m.images.length > 0)).map(m => {
+  el.innerHTML = filtered.map(m => {
     let inner = '';
     if (m.images) m.images.forEach(img => { inner += '<img src="' + img.src + '">'; });
     if (m.role === 'assistant' && !m.content && thinking) {
-      return '<div class="brow ai"><div class="bubble thinking">\u601d\u8003\u4e2d\u2026</div></div>';
+      return '<div class="brow ai"><div class="bubble thinking">思考中…</div></div>';
     }
     if (m.content) inner += md2html(m.content);
     return '<div class="brow ' + (m.role==='user'?'user':'ai') + '"><div class="bubble ' + (m.role==='user'?'user':'ai') + '">' + inner + '</div></div>';
   }).join('');
   el.scrollTop = el.scrollHeight;
+  document.getElementById('meeting-body').scrollTop = 99999;
 }
 
 function md2html(s) {
   return h(s)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/^#{1,3} (.+)$/gm, '<strong>$1</strong>')
-    .replace(/^[-\u2022] (.+)$/gm, '\u2022 $1')
+    .replace(/^[-•] (.+)$/gm, '• $1')
     .replace(/\n/g, '<br>');
 }
 
@@ -689,30 +715,80 @@ function setSumBtn() {
 }
 
 // ═══ Export ═══
-function exportTxt() {
+async function exportMeeting() {
+  const btn = document.getElementById('btn-export');
+  if (!btn || btn.disabled) return;
+  btn.disabled = true;
+  btn.textContent = '⏳ AI 整理中…';
+
+  // ── 1. AI 生成本次會議摘要 ──
+  let aiSummary = '';
+  if (trans.length === 0) {
+    aiSummary = '（本次會議無語音逐字稿）';
+  } else if (thinking) {
+    aiSummary = '（匯出時 AI 正在回覆其他問題，略過此步驟）';
+  } else {
+    try {
+      const exportPrompt =
+        '請根據以上逐字稿，生成一份結構清晰的會議摘要，包含以下三個部分：\n\n' +
+        '## 討論摘要\n（條列本次主要討論了哪些議題與內容）\n\n' +
+        '## 重要決議\n（條列已確認的決議事項）\n\n' +
+        '## 行動事項\n（條列待辦事項，若有提到負責人請一併列出）';
+      const contents = [{ role: 'user', parts: [{ text: exportPrompt }] }];
+      await streamGemini(buildSysPrompt(), contents, chunk => { aiSummary += chunk; });
+    } catch(e) {
+      aiSummary = '（摘要生成失敗：' + e.message + '）';
+    }
+  }
+
+  // ── 2. 整理 AI 對話記錄 ──
+  const aiDialogue = msgs
+    .filter(m => m.content)
+    .map(m => (m.role === 'user' ? '【問】' : '【AI】') + '\n' + m.content)
+    .join('\n\n────────────\n\n');
+
+  // ── 3. 組合輸出 ──
+  const nowStr = new Date().toLocaleString('zh-TW');
   const lines = [
-    '===== \u6703\u8b70\u7d00\u9304 ===== ' + new Date().toLocaleString('zh-TW'),
-    '\u8b70\u7a0b\uff1a' + (agenda||'(\u672a\u586b\u5beb)'),
-    '\u53c3\u8207\u8005\uff1a' + (participants||'(\u672a\u586b\u5beb)'),
+    '【會議紀錄】',
+    '日期：' + nowStr,
+    '議程：' + (agenda || '（未填寫）'),
+    '參與者：' + (participants || '（未填寫）'),
     '',
-    '\u300a\u9010\u5b57\u7a3f\u300b',
-    ...trans.map(t => t.t + ' ' + t.text),
+    '════════════════════════',
+    '一、會議摘要（AI 生成）',
+    '════════════════════════',
+    aiSummary || '（無）',
     '',
-    '\u300aAI \u5c0d\u8a71\u7d00\u9304\u300b',
-    ...msgs.filter(m=>m.content).map(m => (m.role==='user'?'Q: ':'AI: ') + m.content)
+    '════════════════════════',
+    '二、AI 對話紀錄',
+    '════════════════════════',
+    aiDialogue || '（本次會議未使用 AI 對話功能）'
   ];
-  const blob = new Blob([lines.join('\n')], {type:'text/plain;charset=utf-8'});
+
+  // 加 UTF-8 BOM 避免 Windows 亂碼
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM + lines.join('\n')], { type: 'text/plain;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'meeting_' + new Date().toISOString().slice(0,10) + '.txt';
+  a.download = 'meeting_' + new Date().toISOString().slice(0, 10) + '.txt';
   a.click();
+
+  btn.disabled = false;
+  btn.textContent = '💾 匯出';
+}
+
+// ═══ Reset ═══
+function resetMtg() {
+  if (!confirm('確定要重置？逐字稿和 AI 對話都會清除。')) return;
+  stopRec(); trans=[]; msgs=[]; interim=''; pendingImgs=[];
+  renderTrans(); renderChat(); setSumBtn(); renderImgBar();
 }
 
 // ═══ Utils ═══
 function h(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function now(){ const d=new Date(); return p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds()); }
 function p2(n){ return String(n).padStart(2,'0'); }
-
 </script>
 </body>
 </html>
