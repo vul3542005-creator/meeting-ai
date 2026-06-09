@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>會議 AI 助手</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
@@ -16,779 +16,720 @@
 html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--font);font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
 #app{max-width:520px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 
-/* ── Key screen ── */
-#s-key{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;gap:20px}
-#s-key .logo{font-size:48px;margin-bottom:4px}
-#s-key h1{font-size:22px;font-weight:600;color:var(--t1)}
-#s-key p{font-size:14px;color:var(--t2);text-align:center;line-height:1.6}
-#s-key input{width:100%;padding:14px 16px;border:1px solid var(--border);border-radius:12px;font-size:15px;outline:none;background:var(--card)}
-#s-key input:focus{border-color:var(--blue)}
-#s-key .note{font-size:12px;color:var(--t3);text-align:center}
-#s-key .note a{color:var(--blue);text-decoration:none}
+/* ── All screens share base ── */
+.scr{display:flex;flex-direction:column;overflow:hidden;flex:1}
 
-/* ── Setup screen ── */
-#s-setup{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.setup-hd{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 0}
-.setup-hd h2{font-size:18px;font-weight:600}
-.setup-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+/* ── Shared header/footer ── */
+.hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;flex-shrink:0}
+.hd h2{font-size:18px;font-weight:600}
+.back{background:none;border:none;color:var(--blue);font-size:15px;cursor:pointer;font-family:var(--font);padding:4px 0}
+.scroll-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.foot1{padding:12px 16px 24px;flex-shrink:0}
+.foot2{padding:12px 16px 24px;display:flex;gap:10px;flex-shrink:0}
+
+/* ── Cards ── */
 .card{background:var(--card);border-radius:14px;padding:14px 16px}
 .card label{display:block;font-size:13px;font-weight:500;color:var(--t2);margin-bottom:6px}
-.card textarea{width:100%;border:none;outline:none;font-size:15px;color:var(--t1);resize:none;background:transparent;font-family:var(--font);line-height:1.5}
-.card input[type=text]{width:100%;border:none;outline:none;font-size:15px;color:var(--t1);background:transparent;font-family:var(--font)}
-.upload-zone{border:1.5px dashed var(--border);border-radius:12px;padding:14px;text-align:center;cursor:pointer;background:var(--bg)}
-.upload-zone p{font-size:13px;color:var(--t2);margin-top:4px}
-.file-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
-.file-tag{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t1);background:var(--bg);padding:6px 10px;border-radius:8px}
-.file-tag span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.file-tag .del{cursor:pointer;color:var(--t3);font-size:16px;flex-shrink:0}
-.setup-footer{padding:12px 16px 24px;display:flex;gap:10px}
-
-/* ── Meeting screen ── */
-#s-mtg{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.mtg-hd{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--card);flex-shrink:0}
-.mtg-hd h2{font-size:16px;font-weight:600}
-.rec-dot{width:10px;height:10px;border-radius:50%;background:var(--t3);display:inline-block;margin-right:6px}
-.rec-dot.on{background:var(--red);animation:blink 1s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.mtg-body{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px}
-
-/* ── Transcript ── */
-.trans-card{background:var(--card);border-radius:14px;padding:12px 14px;max-height:180px;overflow-y:auto}
-.trans-card h3{font-size:12px;font-weight:500;color:var(--t3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}
-.trans-line{font-size:14px;color:var(--t1);line-height:1.6;padding:2px 0}
-.trans-time{font-size:11px;color:var(--t3);margin-right:6px}
-.interim-text{font-size:14px;color:var(--t3);font-style:italic}
-
-/* ── Chat ── */
-.chat-card{background:var(--card);border-radius:14px;flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
-.chat-card h3{font-size:12px;font-weight:500;color:var(--t3);padding:12px 14px 0;text-transform:uppercase;letter-spacing:.04em}
-.chat-msgs{flex:1;overflow-y:auto;padding:8px 14px 4px;display:flex;flex-direction:column;gap:10px}
-.brow{display:flex;gap:8px}
-.brow.user{flex-direction:row-reverse}
-.bubble{max-width:85%;padding:10px 13px;border-radius:18px;font-size:14px;line-height:1.6;word-break:break-word}
-.bubble.user{background:var(--blue);color:#fff;border-bottom-right-radius:4px}
-.bubble.ai{background:var(--bg);color:var(--t1);border-bottom-left-radius:4px}
-.bubble.thinking{background:var(--bg);color:var(--t3);font-style:italic}
-.bubble img{max-width:100%;border-radius:8px;margin-bottom:6px;display:block}
-.img-bar{padding:6px 14px;display:flex;gap:6px;flex-wrap:wrap}
-.img-thumb{position:relative;width:52px;height:52px}
-.img-thumb img{width:52px;height:52px;object-fit:cover;border-radius:8px}
-.img-thumb .rm{position:absolute;top:-4px;right:-4px;width:18px;height:18px;border-radius:50%;background:var(--t2);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer}
-
-/* ── Input bar ── */
-.input-bar{padding:8px 12px 16px;display:flex;gap:8px;align-items:flex-end;flex-shrink:0;border-top:1px solid var(--border);background:var(--card)}
-.input-bar textarea{flex:1;padding:10px 12px;border:1px solid var(--border);border-radius:20px;font-size:15px;outline:none;resize:none;max-height:100px;font-family:var(--font);line-height:1.4;background:var(--bg)}
-.input-bar textarea:focus{border-color:var(--blue)}
-.ico-btn{width:38px;height:38px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:var(--bg)}
-.ico-btn.blue{background:var(--blue);color:#fff}
-.ico-btn.red{background:var(--red);color:#fff}
+.card textarea,.card input[type=text],.card input[type=password]{width:100%;border:none;outline:none;font-size:15px;color:var(--t1);background:transparent;font-family:var(--font);resize:none;line-height:1.5}
 
 /* ── Buttons ── */
-.btn{padding:13px 0;border:none;border-radius:14px;font-size:16px;font-weight:500;cursor:pointer;width:100%;font-family:var(--font)}
-.btn-blue{background:var(--blue);color:#fff}
-.btn-gray{background:var(--bg);color:var(--t1);border:1px solid var(--border)}
-.btn-red{background:#fff5f5;color:var(--red);border:1px solid #fcd0d0}
-.btn-sm{padding:9px 16px;border-radius:10px;font-size:14px;font-weight:500;border:none;cursor:pointer;font-family:var(--font)}
-.mtg-actions{display:flex;gap:8px;padding:0 0 8px}
-.mtg-actions .btn-sm{flex:1}
+.btn{padding:13px;border:none;border-radius:14px;font-size:16px;font-weight:500;cursor:pointer;width:100%;font-family:var(--font);transition:opacity .15s}
+.btn:disabled{opacity:.5;cursor:default}
+.btn-bl{background:var(--blue);color:#fff}
+.btn-gy{background:var(--bg);color:var(--t1);border:1px solid var(--border)}
+.btn-sm{padding:10px 0;border-radius:10px;font-size:14px;font-weight:500;border:1px solid var(--border);cursor:pointer;font-family:var(--font);flex:1;background:var(--bg);color:var(--t1)}
 
-/* ── Security bar ── */
-.sec-bar{font-size:11px;color:#7a6002;text-align:center;padding:3px 12px;background:#fff8dc;flex-shrink:0;border-bottom:1px solid #ffe082}
+/* ── Error text ── */
+.err-txt{color:var(--red);font-size:13px;text-align:center;min-height:16px}
 
-/* ── Quick prompts ── */
-.qp-wrap{padding:4px 10px 2px;display:flex;gap:5px;flex-wrap:wrap}
-.qp-chip{font-size:12px;padding:4px 10px;border-radius:14px;border:1px solid var(--border);background:var(--bg);cursor:pointer;color:var(--t2);font-family:var(--font);white-space:nowrap;transition:background .15s,color .15s}
-.qp-chip:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
+/* ════ Screen 1: API Key ════ */
+#s-key{align-items:center;justify-content:center;padding:32px 24px;gap:16px}
+#s-key h1{font-size:22px;font-weight:600}
+.key-sub{font-size:14px;color:var(--t2);text-align:center;line-height:1.6}
+.key-inp{width:100%;padding:13px 16px;border:1px solid var(--border);border-radius:12px;font-size:15px;outline:none;background:var(--card);font-family:var(--font)}
+.key-inp:focus{border-color:var(--blue)}
+.key-note{font-size:12px;color:var(--t3);text-align:center}
+.key-note a{color:var(--blue);text-decoration:none}
 
-/* ── Misc ── */
-.err{color:var(--red);font-size:13px;text-align:center}
-.spinner{display:inline-block;width:16px;height:16px;border:2px solid #fff3;border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin-right:6px}
+/* ════ Screen 2: Setup ════ */
+.upload-zone{border:1.5px dashed var(--border);border-radius:12px;padding:14px;text-align:center;cursor:pointer}
+.upload-zone .uz-icon{font-size:28px;display:block;margin-bottom:4px}
+.upload-zone p{font-size:13px;color:var(--t2)}
+.ftag{display:flex;align-items:center;gap:8px;font-size:13px;padding:6px 10px;border-radius:8px;background:var(--bg);margin-top:6px}
+.ftag .fname{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ftag .fx{cursor:pointer;color:var(--t3);font-size:16px;flex-shrink:0}
+.warn-card{background:#fff8dc;border:1px solid #ffe082;border-radius:14px;padding:12px 16px;font-size:13px;color:#7a6002;line-height:1.5}
+
+/* ════ Screen 3: Recording ════ */
+#s-rec{align-items:center;justify-content:center;padding:32px 24px;gap:0}
+.rec-name{font-size:18px;font-weight:600;text-align:center;margin-bottom:6px}
+.rec-ptcp{font-size:13px;color:var(--t2);text-align:center;min-height:18px;margin-bottom:40px}
+.timer{font-size:clamp(56px,16vw,76px);font-weight:200;font-variant-numeric:tabular-nums;letter-spacing:3px;margin-bottom:8px;color:var(--t1)}
+.rec-badge{display:inline-flex;align-items:center;gap:7px;font-size:14px;color:var(--t2);margin-bottom:48px}
+.rec-dot{width:10px;height:10px;border-radius:50%;background:var(--red);animation:blink 1s infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.stop-btn{width:88px;height:88px;border-radius:50%;background:var(--red);border:none;cursor:pointer;font-size:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 28px rgba(224,52,52,.35);transition:transform .1s;flex-shrink:0}
+.stop-btn:active{transform:scale(.91)}
+.stop-label{font-size:13px;color:var(--t2);margin-top:12px}
+.cancel-btn{font-size:14px;color:var(--t3);background:none;border:none;cursor:pointer;font-family:var(--font);margin-top:32px;padding:8px}
+
+/* ════ Screen 4: Processing ════ */
+#s-proc{align-items:center;justify-content:center;padding:32px 24px;gap:18px}
+.proc-icon{font-size:52px}
+.proc-title{font-size:20px;font-weight:600}
+.proc-sub{font-size:14px;color:var(--t2);text-align:center;line-height:1.6}
+.steps{width:100%;display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.step{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--card);font-size:14px;color:var(--t1)}
+.step.s-off{color:var(--t3)}
+.step.s-ok{color:var(--green)}
+.step .si{font-size:18px;width:24px;text-align:center;flex-shrink:0}
+.step.s-on .si{display:inline-block;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ════ Screen 5: Output ════ */
+#s-out .hd{border-bottom:1px solid var(--border);padding-bottom:12px}
+.os{background:var(--card);border-radius:14px;padding:14px 16px}
+.os h3{font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px}
+.sum-txt{font-size:15px;line-height:1.75;color:var(--t1);white-space:pre-wrap}
+.dec-row{font-size:14px;padding:7px 0;border-bottom:1px solid var(--bg);line-height:1.6;color:var(--t1)}
+.dec-row:last-child{border-bottom:none}
+.tbl-wrap{overflow-x:auto;margin-top:2px}
+.task-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.task-tbl th{background:var(--bg);padding:8px 9px;text-align:left;font-size:12px;font-weight:600;color:var(--t2);border-bottom:1px solid var(--border)}
+.task-tbl td{padding:9px 9px;border-bottom:1px solid var(--bg);vertical-align:top;color:var(--t1);line-height:1.5}
+.task-tbl tr:last-child td{border-bottom:none}
+.note-txt{font-size:12px;color:var(--t2);margin-top:2px}
+.badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700}
+.b-h{background:#fff0f0;color:#c00}
+.b-m{background:#fff8e0;color:#a06000}
+.b-l{background:#f0fff4;color:#0a7a0a}
+.empty-msg{text-align:center;color:var(--t2);font-size:14px;padding:20px 0}
+
 [hidden]{display:none!important}
 </style>
 </head>
 <body>
 <div id="app">
 
-<!-- ═══ Screen 1: API Key ═══ -->
-<div id="s-key">
-  <div class="logo">🎙️</div>
+<!-- ══════ Screen 1: API Key ══════ -->
+<div id="s-key" class="scr">
+  <div style="font-size:52px">🎙️</div>
   <h1>會議 AI 助手</h1>
-  <p>請輸入你的 Google Gemini API Key<br>存在瀏覽器中，不會上傳到任何伺服器</p>
-  <input id="inp-key" type="password" placeholder="貼上你的 API Key…" autocomplete="off">
-  <p class="err" id="key-err"></p>
-  <button class="btn btn-blue" onclick="saveKey()">開始使用</button>
-  <p class="note">取得免費 API Key：<a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a></p>
+  <p class="key-sub">請輸入你的 Google Gemini API Key<br>僅存在瀏覽器本地，不會上傳至任何伺服器</p>
+  <input id="inp-key" class="key-inp" type="password" placeholder="貼上你的 Gemini API Key…" autocomplete="off">
+  <p id="key-err" class="err-txt"></p>
+  <button class="btn btn-bl" onclick="saveKey()">開始使用</button>
+  <p class="key-note">取得免費 API Key：<a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a></p>
 </div>
 
-<!-- ═══ Screen 2: Meeting Setup ═══ -->
-<div id="s-setup" hidden>
-  <div class="setup-hd">
-    <button onclick="goKey()" style="background:none;border:none;color:var(--blue);font-size:15px;cursor:pointer">← 返回</button>
+<!-- ══════ Screen 2: Setup ══════ -->
+<div id="s-setup" class="scr" hidden>
+  <div class="hd">
+    <button class="back" onclick="showScr('s-key')">← 返回</button>
     <h2>會議設定</h2>
-    <div style="width:50px"></div>
+    <div style="width:52px"></div>
   </div>
-  <div class="setup-body">
+  <div class="scroll-body">
+    <div class="card">
+      <label>會議名稱</label>
+      <input id="inp-title" type="text" placeholder="例：本週部門例會">
+    </div>
     <div class="card">
       <label>議程</label>
-      <textarea id="inp-agenda" rows="3" placeholder="1. 產品方向討論&#10;2. 預算分配&#10;3. 待辦事項確認"></textarea>
+      <textarea id="inp-agenda" rows="3" placeholder="1. 產品方向討論&#10;2. 預算分配&#10;3. 任務確認"></textarea>
     </div>
     <div class="card">
       <label>背景資料 / 待決議事項</label>
-      <textarea id="inp-bg" rows="3" placeholder="上次會議決議、需要解決的問題等"></textarea>
+      <textarea id="inp-bg" rows="3" placeholder="上次決議、需解決的問題等"></textarea>
     </div>
     <div class="card">
       <label>參與者</label>
-      <input id="inp-ptcp" type="text" placeholder="王、李、張、AI 助手">
+      <input id="inp-ptcp" type="text" placeholder="例：王、李、張">
     </div>
     <div class="card">
-      <label>上傳會議資料（選填）</label>
+      <label>參考資料（選填）</label>
       <div class="upload-zone" onclick="document.getElementById('file-inp').click()">
-        <div style="font-size:28px">📎</div>
-        <p>點擊上傳<br>支援：圖片、Excel、Word、TXT</p>
-        <input id="file-inp" type="file" accept="image/*,.xlsx,.xls,.docx,.txt" multiple hidden onchange="handleFiles(this.files)">
+        <span class="uz-icon">📎</span>
+        <p>點擊上傳 Excel / Word / TXT</p>
+        <input id="file-inp" type="file" accept=".xlsx,.xls,.docx,.txt" multiple hidden onchange="handleFiles(this.files)">
       </div>
-      <div class="file-list" id="file-list"></div>
+      <div id="file-list"></div>
     </div>
+    <div class="warn-card">🔒 錄音結束後將上傳至 Google AI 伺服器進行分析，請注意會議資訊安全。</div>
   </div>
-  <div class="setup-footer">
-    <button class="btn btn-blue" onclick="startMeeting()">✅ 開始會議</button>
+  <div class="foot1">
+    <button id="start-btn" class="btn btn-bl" onclick="startMeeting()">🎤 開始錄音</button>
   </div>
 </div>
 
-<!-- ═══ Screen 3: Meeting ═══ -->
-<div id="s-mtg" hidden>
-  <div class="mtg-hd">
-    <span><span class="rec-dot" id="rec-dot"></span><span id="rec-label">未錄音</span></span>
-    <h2>會議進行中</h2>
-    <button onclick="toggleRec()" id="btn-rec" style="background:none;border:none;font-size:22px;cursor:pointer">🎤</button>
+<!-- ══════ Screen 3: Recording ══════ -->
+<div id="s-rec" class="scr" hidden>
+  <div id="rec-name" class="rec-name">會議進行中</div>
+  <div id="rec-ptcp" class="rec-ptcp"></div>
+  <div id="timer" class="timer">00:00</div>
+  <div class="rec-badge">
+    <span class="rec-dot"></span>錄音中
   </div>
-  <!-- 資安提示 -->
-  <div class="sec-bar">🔒 @AI 功能會將部分逐字稿傳送至 Google 伺服器進行分析，請注意資訊安全</div>
-  <div class="mtg-body" id="meeting-body">
-    <div class="trans-card" id="trans-card">
-      <h3>即時轉錄</h3>
-      <div id="trans-lines"><p style="color:var(--t3);font-size:14px">點擊右上角麥克風開始錄音</p></div>
-      <div id="interim-box"></div>
+  <button class="stop-btn" onclick="stopRec()" title="停止並開始分析">⏹️</button>
+  <div class="stop-label">點擊停止，開始 AI 分析</div>
+  <button class="cancel-btn" onclick="cancelRec()">取消（不儲存本次錄音）</button>
+</div>
+
+<!-- ══════ Screen 4: Processing ══════ -->
+<div id="s-proc" class="scr" hidden>
+  <div class="proc-icon">🤖</div>
+  <div class="proc-title">AI 分析中</div>
+  <div id="proc-sub" class="proc-sub">正在處理會議錄音，請稍候…</div>
+  <div class="steps">
+    <div class="step" id="step-0">
+      <span class="si">⬆️</span><span>準備音頻資料</span>
     </div>
-    <div class="chat-card">
-      <h3>AI 對話</h3>
-      <div class="qp-wrap" id="qp-wrap"></div>
-      <div class="chat-msgs" id="chat-msgs"><p style="color:var(--t3);font-size:14px;padding:8px 0">輸入問題，或點擊上方快速提示</p></div>
+    <div class="step s-off" id="step-1">
+      <span class="si">🤖</span><span>送出 Gemini 分析</span>
+    </div>
+    <div class="step s-off" id="step-2">
+      <span class="si">📋</span><span>生成摘要與行動事項</span>
     </div>
   </div>
-  <div class="img-bar" id="img-bar"></div>
-  <div class="mtg-actions" id="mtg-actions" style="padding:0 16px 0">
-    <button class="btn-sm" id="btn-sum" style="background:#f0f7ff;color:var(--blue);border:1px solid #c0d8ff" onclick="genSummary()" disabled>📋 總結逐字稿</button>
-    <button class="btn-sm" id="btn-export" style="background:var(--bg);color:var(--t2);border:1px solid var(--border)" onclick="exportMeeting()">💾 匯出</button>
-    <button class="btn-sm" style="background:#fff5f5;color:var(--red);border:1px solid #fcd0d0" onclick="resetMtg()">🔄 重置</button>
+  <p id="proc-err" class="err-txt" style="margin-top:4px"></p>
+  <button id="retry-btn" class="btn btn-gy" onclick="retryProc()" hidden style="width:auto;padding:10px 28px;margin-top:4px">重試</button>
+</div>
+
+<!-- ══════ Screen 5: Output ══════ -->
+<div id="s-out" class="scr" hidden>
+  <div class="hd">
+    <span id="out-date" style="font-size:12px;color:var(--t2)"></span>
+    <h2 id="out-title" style="font-size:16px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">會議紀錄</h2>
+    <button class="back" style="font-size:13px" onclick="newMtg()">新會議</button>
   </div>
-  <div class="input-bar">
-    <button class="ico-btn" onclick="document.getElementById('chat-img-inp').click()" title="上傳圖片">📷</button>
-    <input id="chat-img-inp" type="file" accept="image/*" multiple hidden onchange="addChatImgs(this.files)">
-    <button id="btn-chat-mic" class="ico-btn"
-      onmousedown="chatRecStart(event)" onmouseup="chatRecStop(event)" onmouseleave="chatRecStop(event)"
-      ontouchstart="chatRecStart(event)" ontouchend="chatRecStop(event)" ontouchcancel="chatRecStop(event)"
-      title="按住說話">🎤</button>
-    <textarea id="chat-inp" rows="1" placeholder="問 AI（例：整理重點、待辦事項）" oninput="autoGrow(this)" onkeydown="chatKeydown(event)"></textarea>
-    <button class="ico-btn blue" onclick="sendChat()">↑</button>
+  <div class="scroll-body" id="out-body"></div>
+  <div class="foot2">
+    <button class="btn-sm" onclick="exportTxt()">📄 TXT</button>
+    <button class="btn-sm" onclick="exportXls()">📊 Excel</button>
   </div>
 </div>
 
 </div><!-- #app -->
 <script>
-// ═══ State ═══
-const KEY_STORE = 'gemini_api_key';
-let apiKey = localStorage.getItem(KEY_STORE) || '';
-let agenda='', bgInfo='', participants='', uploadedData='';
-let trans=[], msgs=[], interim='', pendingImgs=[], thinking=false;
-let recognition=null, isRecording=false;
-let uploadedFiles=[];
-let chatRec=null, chatRecFinal='';
+// ══════════════════════════════════════════════
+//  State
+// ══════════════════════════════════════════════
+const KEY_S   = 'gemini_key';
+const SETUP_S = 'mtg_setup_v3';
+let apiKey = localStorage.getItem(KEY_S) || '';
 
-const QUICK_PROMPTS = [
-  '📋 整理目前討論重點',
-  '✅ 列出所有待辦事項',
-  '📊 整理重要決議',
-  '❓ 剛才討論了什麼結論？'
-];
+// Meeting context (filled from form each session)
+let mtgTitle = '', mtgPtcp = '', mtgAgenda = '', mtgBg = '', uploadRef = '';
+let uploadedFiles = [];
 
-// ═══ Init ═══
+// Recording
+let mediaRecorder = null;
+let audioChunks   = [];
+let audioStream   = null;
+let recSecs       = 0;
+let timerTick     = null;
+
+// Processing / Output
+let lastBlob   = null;
+let outputData = null;  // { summary, decisions, tasks }
+
+// ══════════════════════════════════════════════
+//  Init
+// ══════════════════════════════════════════════
 window.onload = () => {
-  if (apiKey) {
-    showScreen('s-setup');
+  if (apiKey.length >= 20) {
     document.getElementById('inp-key').value = apiKey;
+    loadForm();
+    showScr('s-setup');
   } else {
-    showScreen('s-key');
+    showScr('s-key');
   }
 };
 
-function showScreen(id) {
-  ['s-key','s-setup','s-mtg'].forEach(s => {
+function showScr(id) {
+  ['s-key','s-setup','s-rec','s-proc','s-out'].forEach(s => {
     document.getElementById(s).hidden = (s !== id);
   });
 }
 
-// ═══ API Key ═══
+// ══════════════════════════════════════════════
+//  Screen 1 – API Key
+// ══════════════════════════════════════════════
 function saveKey() {
-  const k = document.getElementById('inp-key').value.trim();
-  if (k.length < 20) {
-    document.getElementById('key-err').textContent = 'API Key 太短，格式可能有誤，請重新確認';
-    return;
-  }
+  const k   = document.getElementById('inp-key').value.trim();
+  const err = document.getElementById('key-err');
+  if (k.length < 20) { err.textContent = 'API Key 格式有誤，請再確認'; return; }
+  err.textContent = '';
   apiKey = k;
-  localStorage.setItem(KEY_STORE, k);
-  document.getElementById('key-err').textContent = '';
-  showScreen('s-setup');
+  localStorage.setItem(KEY_S, k);
+  loadForm();
+  showScr('s-setup');
 }
 
-function goKey() {
-  document.getElementById('inp-key').value = apiKey;
-  showScreen('s-key');
+// ══════════════════════════════════════════════
+//  Screen 2 – Setup & File Upload
+// ══════════════════════════════════════════════
+function loadForm() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SETUP_S) || '{}');
+    document.getElementById('inp-title').value  = d.title  || '';
+    document.getElementById('inp-agenda').value = d.agenda || '';
+    document.getElementById('inp-bg').value     = d.bg     || '';
+    document.getElementById('inp-ptcp').value   = d.ptcp   || '';
+  } catch(e) {}
 }
 
-// ═══ File Upload（Setup）═══
+function saveForm() {
+  localStorage.setItem(SETUP_S, JSON.stringify({
+    title  : document.getElementById('inp-title').value.trim(),
+    agenda : document.getElementById('inp-agenda').value.trim(),
+    bg     : document.getElementById('inp-bg').value.trim(),
+    ptcp   : document.getElementById('inp-ptcp').value.trim()
+  }));
+}
+
 async function handleFiles(files) {
   for (const f of files) {
-    const name = f.name;
-    const ext = name.split('.').pop().toLowerCase();
+    const ext = f.name.split('.').pop().toLowerCase();
     let text = '';
     try {
-      if (ext === 'txt') {
-        text = await f.text();
-      } else if (ext === 'xlsx' || ext === 'xls') {
-        text = await readExcel(f);
-      } else if (ext === 'docx') {
-        text = await readDocx(f);
-      } else if (f.type.startsWith('image/')) {
-        const b64 = await toBase64(f);
-        text = await ocrImage(b64, f.type);
-      }
-      if (text) {
-        uploadedFiles.push({ name, text });
-        renderFileList();
-      }
-    } catch(e) {
-      alert('讀取 ' + name + ' 失敗：' + e.message);
-    }
+      if (ext === 'txt')              text = await f.text();
+      else if (ext === 'xlsx' || ext === 'xls') text = await readXlsx(f);
+      else if (ext === 'docx')        text = await readDocx(f);
+      if (text) uploadedFiles.push({ name: f.name, text });
+    } catch(e) { alert('讀取失敗：' + f.name + '\n' + e.message); }
   }
   document.getElementById('file-inp').value = '';
+  renderFiles();
 }
 
-function readExcel(f) {
+function readXlsx(f) {
   return new Promise((res, rej) => {
-    const reader = new FileReader();
-    reader.onload = e => {
+    const r = new FileReader();
+    r.onload = e => {
       try {
-        const wb = XLSX.read(e.target.result, {type:'array'});
-        let out = '';
-        wb.SheetNames.forEach(sn => {
-          out += '【' + sn + '】\n';
-          const rows = XLSX.utils.sheet_to_csv(wb.Sheets[sn]);
-          // Limit to 300 lines to avoid token overflow
-          const lines = rows.split('\n').filter(r=>r.replace(/,/g,'').trim()).slice(0,300);
-          out += lines.join('\n') + '\n';
+        const wb  = XLSX.read(e.target.result, { type: 'array' });
+        let   out = '';
+        wb.SheetNames.forEach(n => {
+          out += '【' + n + '】\n' +
+            XLSX.utils.sheet_to_csv(wb.Sheets[n])
+              .split('\n').filter(r => r.replace(/,/g,'').trim()).slice(0, 200).join('\n') + '\n';
         });
         res(out);
-      } catch(e){ rej(e); }
+      } catch(e) { rej(e); }
     };
-    reader.readAsArrayBuffer(f);
+    r.readAsArrayBuffer(f);
   });
 }
 
 function readDocx(f) {
   return new Promise((res, rej) => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      mammoth.extractRawText({arrayBuffer: e.target.result})
-        .then(r => res(r.value))
-        .catch(rej);
-    };
-    reader.readAsArrayBuffer(f);
-  });
-}
-
-function toBase64(f) {
-  return new Promise((res,rej) => {
     const r = new FileReader();
-    r.onload = e => res(e.target.result.split(',')[1]);
-    r.onerror = rej;
-    r.readAsDataURL(f);
+    r.onload = e => mammoth.extractRawText({ arrayBuffer: e.target.result }).then(r => res(r.value)).catch(rej);
+    r.readAsArrayBuffer(f);
   });
 }
 
-async function ocrImage(b64, mimeType) {
-  const resp = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey,
-    {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        contents:[{
-          role:'user',
-          parts:[
-            {inline_data:{mime_type:mimeType, data:b64}},
-            {text:'請辨識這張圖片中所有的文字內容，保持原始格式，不要加入任何說明'}
-          ]
-        }]
-      })
-    }
-  );
-  const data = await resp.json();
-  if (!resp.ok) throw new Error(data.error?.message || '辨識失敗');
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-}
-
-function renderFileList() {
-  const el = document.getElementById('file-list');
-  el.innerHTML = uploadedFiles.map((f,i) =>
-    '<div class="file-tag"><span>📄 ' + h(f.name) + '</span><span class="del" onclick="removeFile(' + i + ')">✕</span></div>'
+function renderFiles() {
+  document.getElementById('file-list').innerHTML = uploadedFiles.map((f, i) =>
+    `<div class="ftag"><span class="fname">📄 ${h(f.name)}</span><span class="fx" onclick="rmFile(${i})">✕</span></div>`
   ).join('');
 }
 
-function removeFile(i) {
-  uploadedFiles.splice(i, 1);
-  renderFileList();
+function rmFile(i) { uploadedFiles.splice(i, 1); renderFiles(); }
+
+// ══════════════════════════════════════════════
+//  Screen 3 – Recording
+// ══════════════════════════════════════════════
+async function startMeeting() {
+  const btn = document.getElementById('start-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 等待麥克風授權…';
+
+  try {
+    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '🎤 開始錄音';
+    alert('無法取得麥克風：' + (e.message || e));
+    return;
+  }
+
+  // Collect form data
+  saveForm();
+  mtgTitle   = document.getElementById('inp-title').value.trim()  || '未命名會議';
+  mtgPtcp    = document.getElementById('inp-ptcp').value.trim();
+  mtgAgenda  = document.getElementById('inp-agenda').value.trim();
+  mtgBg      = document.getElementById('inp-bg').value.trim();
+  uploadRef  = uploadedFiles.map(f => '【' + f.name + '】\n' + f.text).join('\n\n').slice(0, 8000);
+
+  // MediaRecorder setup
+  audioChunks = [];
+  const prefer = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'];
+  const mime   = prefer.find(m => { try { return MediaRecorder.isTypeSupported(m); } catch(e) { return false; } }) || '';
+  try {
+    mediaRecorder = new MediaRecorder(
+      audioStream,
+      mime ? { mimeType: mime, audioBitsPerSecond: 24000 } : {}
+    );
+  } catch(e) {
+    mediaRecorder = new MediaRecorder(audioStream);
+  }
+  mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+  mediaRecorder.onstop = onRecStop;
+  mediaRecorder.start(1000);  // emit data every 1 s
+
+  // UI
+  document.getElementById('rec-name').textContent = mtgTitle;
+  document.getElementById('rec-ptcp').textContent = mtgPtcp;
+  recSecs = 0;
+  updateTimer();
+  timerTick = setInterval(() => { recSecs++; updateTimer(); }, 1000);
+
+  btn.disabled = false;
+  btn.textContent = '🎤 開始錄音';
+  showScr('s-rec');
 }
 
-// ═══ Start Meeting ═══
-function startMeeting() {
-  agenda = document.getElementById('inp-agenda').value.trim();
-  bgInfo = document.getElementById('inp-bg').value.trim();
-  participants = document.getElementById('inp-ptcp').value.trim();
-  uploadedData = uploadedFiles.map(f => '【' + f.name + '】\n' + f.text).join('\n\n');
-  trans=[]; msgs=[]; interim=''; pendingImgs=[];
-  renderTrans(); renderChat(); setSumBtn();
-  showScreen('s-mtg');
-}
-
-// ═══ Quick Prompts ═══
-function renderQP() {
-  const el = document.getElementById('qp-wrap');
-  const hasMsg = msgs.some(m => m.content || (m.images && m.images.length > 0));
-  if (hasMsg) { el.innerHTML = ''; return; }
-  el.innerHTML = QUICK_PROMPTS.map(p =>
-    '<button class="qp-chip" onclick="useQP(\'' + p.replace(/\\/g,'\\\\').replace(/'/g,"\\'") + '\')">' + h(p) + '</button>'
-  ).join('');
-}
-
-function useQP(txt) {
-  const inp = document.getElementById('chat-inp');
-  inp.value = txt;
-  autoGrow(inp);
-  inp.focus();
-}
-
-// ═══ Speech Recognition ═══
-function toggleRec() {
-  isRecording ? stopRec() : startRec();
-}
-
-function startRec() {
-  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRec) { alert('此瀏覽器不支援語音辨識，請使用 Chrome'); return; }
-  recognition = new SpeechRec();
-  recognition.lang = 'zh-TW';
-  recognition.continuous = true;
-  recognition.interimResults = true;
-  recognition.onresult = e => {
-    let fin='', intr='';
-    for (let i=e.resultIndex; i<e.results.length; i++) {
-      if (e.results[i].isFinal) fin += e.results[i][0].transcript;
-      else intr += e.results[i][0].transcript;
-    }
-    if (fin) {
-      trans.push({t: now(), text: fin.trim()});
-      renderTrans();
-      setSumBtn();
-    }
-    interim = intr;
-    document.getElementById('interim-box').innerHTML = interim
-      ? '<div class="interim-text">' + h(interim) + '</div>' : '';
-  };
-  recognition.onerror = e => {
-    if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
-      // 麥克風權限被拒，停止錄音
-      isRecording = false;
-      document.getElementById('rec-dot').classList.remove('on');
-      document.getElementById('rec-label').textContent = '麥克風被拒絕';
-      document.getElementById('btn-rec').textContent = '🎤';
-    } else if (e.error !== 'no-speech' && e.error !== 'aborted') {
-      console.warn('SR error:', e.error);
-    }
-  };
-  recognition.onend = () => {
-    // 加入延遲避免 Chrome 重啟競爭條件
-    if (isRecording && recognition) {
-      setTimeout(() => {
-        try { if (recognition && isRecording) recognition.start(); }
-        catch(err) { console.warn('SR restart:', err.message); }
-      }, 300);
-    }
-  };
-  recognition.start();
-  isRecording = true;
-  document.getElementById('rec-dot').classList.add('on');
-  document.getElementById('rec-label').textContent = '錄音中';
-  document.getElementById('btn-rec').textContent = '⏹️';
+function updateTimer() {
+  const hh = Math.floor(recSecs / 3600);
+  const mm = Math.floor((recSecs % 3600) / 60);
+  const ss = recSecs % 60;
+  document.getElementById('timer').textContent =
+    (hh > 0 ? p2(hh) + ':' : '') + p2(mm) + ':' + p2(ss);
 }
 
 function stopRec() {
-  if (recognition) { recognition.onend=null; recognition.stop(); recognition=null; }
-  isRecording = false;
-  document.getElementById('rec-dot').classList.remove('on');
-  document.getElementById('rec-label').textContent = '已停止';
-  document.getElementById('btn-rec').textContent = '🎤';
+  clearInterval(timerTick);
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  if (audioStream) audioStream.getTracks().forEach(t => t.stop());
 }
 
-// ═══ Chat Voice Input（按住說話）═══
-function chatRecStart(e) {
-  e.preventDefault();
-  if (chatRec) return;
-  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRec) { alert('請使用 Chrome 瀏覽器以使用語音功能'); return; }
-
-  const btn = document.getElementById('btn-chat-mic');
-  const inp = document.getElementById('chat-inp');
-  const baseText = inp.value; // 保留輸入框裡原有的文字
-  chatRecFinal = '';
-
-  chatRec = new SpeechRec();
-  chatRec.lang = 'zh-TW';
-  chatRec.continuous = true;
-  chatRec.interimResults = true;
-
-  chatRec.onresult = e => {
-    let addedFinal = '', intr = '';
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) addedFinal += e.results[i][0].transcript;
-      else intr += e.results[i][0].transcript;
-    }
-    chatRecFinal += addedFinal;
-    inp.value = baseText + chatRecFinal + intr; // 即時顯示（含暫時文字）
-    autoGrow(inp);
-  };
-
-  chatRec.onend = () => {
-    inp.value = baseText + chatRecFinal; // 放開後清掉暫時文字，只留確定的
-    autoGrow(inp);
-    chatRec = null;
-    btn.classList.remove('red');
-    btn.textContent = '🎤';
-  };
-
-  chatRec.onerror = e => {
-    if (e.error !== 'no-speech' && e.error !== 'aborted') console.warn('chatRec:', e.error);
-  };
-
-  chatRec.start();
-  btn.classList.add('red');
-  btn.textContent = '🔴';
-}
-
-function chatRecStop(e) {
-  if (e) e.preventDefault();
-  if (!chatRec) return;
-  try { chatRec.stop(); } catch(err) {}
-  // 清理由 onend 接手
-}
-
-// ═══ Chat ═══
-function chatKeydown(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
-}
-
-function autoGrow(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
-}
-
-function addChatImgs(files) {
-  for (const f of files) {
-    const r = new FileReader();
-    r.onload = e => {
-      pendingImgs.push({src: e.target.result, type: f.type, data: e.target.result.split(',')[1]});
-      renderImgBar();
-    };
-    r.readAsDataURL(f);
+function cancelRec() {
+  if (!confirm('確定取消？本次錄音將不會被儲存。')) return;
+  clearInterval(timerTick);
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    mediaRecorder.ondataavailable = null;
+    mediaRecorder.onstop = null;
+    mediaRecorder.stop();
   }
-  document.getElementById('chat-img-inp').value = '';
+  if (audioStream) audioStream.getTracks().forEach(t => t.stop());
+  audioChunks = [];
+  showScr('s-setup');
 }
 
-function renderImgBar() {
-  const el = document.getElementById('img-bar');
-  el.innerHTML = pendingImgs.map((img,i) =>
-    '<div class="img-thumb"><img src="' + img.src + '"><span class="rm" onclick="removePendingImg(' + i + ')">✕</span></div>'
-  ).join('');
+function onRecStop() {
+  const mType  = mediaRecorder.mimeType || 'audio/webm';
+  lastBlob = new Blob(audioChunks, { type: mType });
+  beginProcess(lastBlob);
 }
 
-function removePendingImg(i) {
-  pendingImgs.splice(i, 1);
-  renderImgBar();
+// ══════════════════════════════════════════════
+//  Screen 4 – Processing
+// ══════════════════════════════════════════════
+function beginProcess(blob) {
+  document.getElementById('proc-err').textContent = '';
+  document.getElementById('retry-btn').hidden = true;
+  resetSteps();
+  showScr('s-proc');
+  processAudio(blob);
 }
 
-async function sendChat() {
-  const inp = document.getElementById('chat-inp');
-  const txt = inp.value.trim();
-  if (!txt && pendingImgs.length === 0) return;
-  if (thinking) return;
+function retryProc() {
+  if (lastBlob) beginProcess(lastBlob);
+}
 
-  if (txt && !txt.includes('@AI') && !txt.includes('@ai')) {
-    // Show hint but still allow sending
-  }
+const STEP_ICONS = ['⬆️', '🤖', '📋'];
 
-  const userMsg = { role:'user', content: txt, images: [...pendingImgs] };
-  msgs.push(userMsg);
-  pendingImgs = [];
-  inp.value = ''; inp.style.height='auto';
-  renderImgBar();
-  renderChat();
+function resetSteps() {
+  [0, 1, 2].forEach(i => {
+    const el = document.getElementById('step-' + i);
+    el.className = 'step' + (i > 0 ? ' s-off' : '');
+    el.querySelector('.si').textContent = STEP_ICONS[i];
+  });
+}
 
-  thinking = true;
-  setSumBtn();
-  const aiMsg = { role:'assistant', content:'' };
-  msgs.push(aiMsg);
-  renderChat();
+function setStep(n) {
+  [0, 1, 2].forEach(i => {
+    const el = document.getElementById('step-' + i);
+    const si = el.querySelector('.si');
+    if      (i < n)  { el.className = 'step s-ok'; si.textContent = '✅'; }
+    else if (i === n) { el.className = 'step s-on'; si.textContent = STEP_ICONS[i]; }
+    else              { el.className = 'step s-off'; si.textContent = STEP_ICONS[i]; }
+  });
+}
 
+function showProcErr(msg) {
+  document.getElementById('proc-err').textContent = msg;
+  document.getElementById('retry-btn').hidden = false;
+}
+
+async function processAudio(blob) {
+  // ── Step 0: convert blob to base64 ──
+  setStep(0);
+  let b64, mimeType;
   try {
-    const sysPrompt = buildSysPrompt();
-    const geminiMsgs = buildGeminiMsgs();
-    await streamGemini(sysPrompt, geminiMsgs, chunk => {
-      aiMsg.content += chunk;
-      renderChat();
-    });
+    const r = await blobToBase64(blob);
+    b64      = r.data;
+    mimeType = r.mime;
   } catch(e) {
-    aiMsg.content = '❌ 錯誤：' + e.message;
-    renderChat();
+    showProcErr('音頻處理失敗：' + e.message);
+    return;
   }
-  thinking = false;
-  setSumBtn();
-}
 
-async function genSummary() {
-  if (trans.length === 0 || thinking) return;
-  thinking = true; setSumBtn();
-  const sumMsg = { role:'assistant', content:'' };
-  msgs.push({ role:'user', content:'請根據目前的逐字稿，生成完整的會議總結，包含：1.討論摘要 2.重要決議 3.待辦事項', images:[] });
-  msgs.push(sumMsg);
-  renderChat();
+  // ── Step 1: call Gemini ──
+  setStep(1);
+  let rawText;
   try {
-    await streamGemini(buildSysPrompt(), buildGeminiMsgs(), chunk => {
-      sumMsg.content += chunk;
-      renderChat();
-    });
+    rawText = await callGemini(b64, mimeType);
   } catch(e) {
-    sumMsg.content = '❌ 總結失敗：' + e.message + '\n\n請確認：\n• API Key 是否有效\n• 網路連線是否正常';
-    renderChat();
+    showProcErr('AI 分析失敗：' + e.message);
+    return;
   }
-  thinking = false; setSumBtn();
+
+  // ── Step 2: parse & render ──
+  setStep(2);
+  outputData = parseJSON(rawText);
+  await delay(600);
+  renderOutput();
+  showScr('s-out');
 }
 
-function buildSysPrompt() {
-  let s = '你是一個專業的會議 AI 助手，使用繁體中文回答。';
-  if (agenda) s += '\n\n【會議議程】\n' + agenda;
-  if (bgInfo)  s += '\n\n【背景資料】\n' + bgInfo;
-  if (participants) s += '\n\n【參與者】' + participants;
-  if (uploadedData) s += '\n\n【上傳資料】\n' + uploadedData.slice(0, 8000);
-  const transTxt = trans.slice(-30).map(t => t.t + ' ' + t.text).join('\n');
-  if (transTxt) s += '\n\n【即時逐字稿（最近30條）】\n' + transTxt;
-  s += '\n\n根據以上資料回答問題。回答要簡潔、結構化。';
+async function blobToBase64(blob) {
+  const MB = blob.size / (1024 * 1024);
+  // At 24 kbps: 15 MB ≈ 83 min — should cover any typical meeting
+  if (blob.size > 15 * 1024 * 1024) {
+    throw new Error(
+      `錄音檔案過大（${MB.toFixed(1)} MB）。\n24 kbps 下約可錄 80 分鐘，建議縮短會議後重試。`
+    );
+  }
+
+  const mime    = blob.type.split(';')[0] || 'audio/webm';
+  const buf     = await blob.arrayBuffer();
+  const bytes   = new Uint8Array(buf);
+  const CHUNK   = 8192;
+  let   bin     = '';
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  }
+  return { data: btoa(bin), mime };
+}
+
+function buildSys() {
+  let s = '你是一個專業的會議記錄助手，使用繁體中文輸出。';
+  if (mtgAgenda) s += '\n\n【本次會議議程】\n' + mtgAgenda;
+  if (mtgBg)     s += '\n\n【背景資料 / 待決議事項】\n' + mtgBg;
+  if (mtgPtcp)   s += '\n\n【參與者】' + mtgPtcp;
+  if (uploadRef) s += '\n\n【參考資料】\n' + uploadRef;
   return s;
 }
 
-function buildGeminiMsgs() {
-  // Filter out empty messages
-  const history = msgs.filter(m => m.content || (m.images && m.images.length > 0));
-  // Remove trailing empty assistant turns
-  while (history.length && history[history.length-1].role === 'assistant' && !history[history.length-1].content) {
-    history.pop();
-  }
-  // Convert to Gemini format, merging consecutive same-role messages to satisfy API alternation requirement
-  const merged = [];
-  for (const m of history) {
-    const gemRole = m.role === 'assistant' ? 'model' : 'user';
-    if (merged.length && merged[merged.length-1].role === gemRole) {
-      if (m.content) merged[merged.length-1].parts.push({text: m.content});
-    } else {
-      const parts = [];
-      if (m.images) m.images.forEach(img => parts.push({inline_data:{mime_type:img.type, data:img.data}}));
-      if (m.content) parts.push({text: m.content});
-      if (parts.length) merged.push({ role: gemRole, parts });
-    }
-  }
-  return merged;
-}
-
-// ═══ Gemini API ═══
-async function streamGemini(sysPrompt, contents, onChunk, model='gemini-2.5-flash') {
-  if (!contents || contents.length === 0) throw new Error('沒有訊息可以送出');
+async function callGemini(b64, mimeType, model = 'gemini-2.5-flash') {
+  const userPrompt =
+    `請仔細聆聽並分析這段會議錄音，以繁體中文輸出。` +
+    `只輸出純 JSON（不含任何 markdown、說明文字或換行之外的格式），` +
+    `嚴格遵守以下結構：\n` +
+    `{\n` +
+    `  "summary": "整體討論摘要（條列重點，用 \\n 分隔，至少 3 點）",\n` +
+    `  "decisions": ["決議1", "決議2"],\n` +
+    `  "tasks": [\n` +
+    `    {\n` +
+    `      "task": "具體任務描述",\n` +
+    `      "assignee": "負責人或部門（未提及填「待確認」）",\n` +
+    `      "deadline": "截止日期（未提及填「未定」）",\n` +
+    `      "priority": "高、中或低",\n` +
+    `      "notes": "補充說明（無則填「-」）"\n` +
+    `    }\n` +
+    `  ]\n` +
+    `}\n` +
+    `若無明確決議或任務，對應陣列填 []。只輸出 JSON，其他什麼都不要。`;
 
   const body = {
-    contents,
-    generationConfig: { maxOutputTokens: 2048 }
+    contents: [{
+      role : 'user',
+      parts: [
+        { inline_data: { mime_type: mimeType, data: b64 } },
+        { text: userPrompt }
+      ]
+    }],
+    system_instruction : { parts: [{ text: buildSys() }] },
+    generationConfig   : { maxOutputTokens: 4096 }
   };
-  if (sysPrompt) body.system_instruction = { parts: [{text: sysPrompt}] };
 
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/' + model +
-    ':streamGenerateContent?alt=sse&key=' + apiKey;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify(body)
-  });
+  const resp = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+  );
 
-  if (!res.ok) {
-    const err = await res.json().catch(()=>({error:{code:res.status, message:'HTTP '+res.status}}));
-    // 配額超限時自動降級到 1.5-flash
-    if (res.status === 429 && model === 'gemini-2.5-flash') {
-      return streamGemini(sysPrompt, contents, onChunk, 'gemini-1.5-flash');
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({}));
+    // Rate limit → fall back to 1.5 Flash
+    if (resp.status === 429 && model === 'gemini-2.5-flash') {
+      return callGemini(b64, mimeType, 'gemini-1.5-flash');
     }
-    throw new Error(err.error?.message || 'API 錯誤 ' + res.status);
+    throw new Error(err.error?.message || 'API 錯誤 ' + resp.status);
   }
 
-  const reader = res.body.getReader();
-  const dec = new TextDecoder();
-  let buf = '';
-  while (true) {
-    const {done, value} = await reader.read();
-    if (done) break;
-    buf += dec.decode(value, {stream:true});
-    const lines = buf.split('\n');
-    buf = lines.pop() || '';
-    for (const line of lines) {
-      if (!line.startsWith('data: ')) continue;
-      const json = line.slice(6).trim();
-      if (json === '[DONE]') return;
-      try {
-        const d = JSON.parse(json);
-        const txt = d.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (txt) onChunk(txt);
-      } catch(e) {}
-    }
+  const data = await resp.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+function parseJSON(text) {
+  text = (text || '').replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+  try { return JSON.parse(text); } catch(e) {}
+  const m = text.match(/\{[\s\S]+\}/);
+  if (m) try { return JSON.parse(m[0]); } catch(e) {}
+  // Fallback: treat raw text as summary
+  return { summary: text || '（AI 未能正確輸出，請重試）', decisions: [], tasks: [] };
+}
+
+// ══════════════════════════════════════════════
+//  Screen 5 – Output
+// ══════════════════════════════════════════════
+function renderOutput() {
+  const d = outputData || {};
+
+  document.getElementById('out-date').textContent  = new Date().toLocaleDateString('zh-TW');
+  document.getElementById('out-title').textContent = mtgTitle || '會議紀錄';
+
+  let html = '';
+
+  // — Summary —
+  html += `<div class="os">
+    <h3>📝 討論摘要</h3>
+    <div class="sum-txt">${h(d.summary || '（未產生摘要）')}</div>
+  </div>`;
+
+  // — Decisions —
+  if (d.decisions?.length) {
+    html += `<div class="os"><h3>✅ 重要決議</h3>`;
+    html += d.decisions.map(dec => `<div class="dec-row">• ${h(dec)}</div>`).join('');
+    html += `</div>`;
   }
-}
 
-// ═══ Render ═══
-function renderTrans() {
-  const el = document.getElementById('trans-lines');
-  if (trans.length === 0) {
-    el.innerHTML = '<p style="color:var(--t3);font-size:14px">點擊右上角麥克風開始錄音</p>';
-    return;
-  }
-  el.innerHTML = trans.slice(-50).map(l =>
-    '<div class="trans-line"><span class="trans-time">' + l.t + '</span>' + h(l.text) + '</div>'
-  ).join('');
-  el.scrollTop = el.scrollHeight;
-}
-
-function renderChat() {
-  const el = document.getElementById('chat-msgs');
-  const filtered = msgs.filter(m => m.content || (m.images && m.images.length > 0));
-  renderQP();
-  if (filtered.length === 0) {
-    el.innerHTML = '<p style="color:var(--t3);font-size:14px;padding:8px 0">輸入問題，或點擊上方快速提示</p>';
-    return;
-  }
-  el.innerHTML = filtered.map(m => {
-    let inner = '';
-    if (m.images) m.images.forEach(img => { inner += '<img src="' + img.src + '">'; });
-    if (m.role === 'assistant' && !m.content && thinking) {
-      return '<div class="brow ai"><div class="bubble thinking">思考中…</div></div>';
-    }
-    if (m.content) inner += md2html(m.content);
-    return '<div class="brow ' + (m.role==='user'?'user':'ai') + '"><div class="bubble ' + (m.role==='user'?'user':'ai') + '">' + inner + '</div></div>';
-  }).join('');
-  el.scrollTop = el.scrollHeight;
-  document.getElementById('meeting-body').scrollTop = 99999;
-}
-
-function md2html(s) {
-  return h(s)
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/^#{1,3} (.+)$/gm, '<strong>$1</strong>')
-    .replace(/^[-•] (.+)$/gm, '• $1')
-    .replace(/\n/g, '<br>');
-}
-
-function setSumBtn() {
-  document.getElementById('btn-sum').disabled = trans.length === 0 || thinking;
-}
-
-// ═══ Export ═══
-async function exportMeeting() {
-  const btn = document.getElementById('btn-export');
-  if (!btn || btn.disabled) return;
-  btn.disabled = true;
-  btn.textContent = '⏳ AI 整理中…';
-
-  // ── 1. AI 生成本次會議摘要 ──
-  let aiSummary = '';
-  if (trans.length === 0) {
-    aiSummary = '（本次會議無語音逐字稿）';
-  } else if (thinking) {
-    aiSummary = '（匯出時 AI 正在回覆其他問題，略過此步驟）';
+  // — Task table —
+  if (d.tasks?.length) {
+    html += `<div class="os"><h3>📋 行動事項</h3><div class="tbl-wrap">`;
+    html += `<table class="task-tbl">
+      <thead><tr><th>任務</th><th>負責人</th><th>截止</th><th>優先</th></tr></thead>
+      <tbody>`;
+    html += d.tasks.map(t => {
+      const bc = t.priority === '高' ? 'b-h' : t.priority === '中' ? 'b-m' : 'b-l';
+      const note = (t.notes && t.notes !== '-')
+        ? `<div class="note-txt">${h(t.notes)}</div>` : '';
+      return `<tr>
+        <td>${h(t.task)}${note}</td>
+        <td>${h(t.assignee)}</td>
+        <td style="white-space:nowrap">${h(t.deadline)}</td>
+        <td><span class="badge ${bc}">${h(t.priority)}</span></td>
+      </tr>`;
+    }).join('');
+    html += `</tbody></table></div></div>`;
   } else {
-    try {
-      const exportPrompt =
-        '請根據以上逐字稿，生成一份結構清晰的會議摘要，包含以下三個部分：\n\n' +
-        '## 討論摘要\n（條列本次主要討論了哪些議題與內容）\n\n' +
-        '## 重要決議\n（條列已確認的決議事項）\n\n' +
-        '## 行動事項\n（條列待辦事項，若有提到負責人請一併列出）';
-      const contents = [{ role: 'user', parts: [{ text: exportPrompt }] }];
-      await streamGemini(buildSysPrompt(), contents, chunk => { aiSummary += chunk; });
-    } catch(e) {
-      aiSummary = '（摘要生成失敗：' + e.message + '）';
-    }
+    html += `<div class="os"><div class="empty-msg">本次會議無明確行動事項</div></div>`;
   }
 
-  // ── 2. 整理 AI 對話記錄 ──
-  const aiDialogue = msgs
-    .filter(m => m.content)
-    .map(m => (m.role === 'user' ? '【問】' : '【AI】') + '\n' + m.content)
-    .join('\n\n────────────\n\n');
+  document.getElementById('out-body').innerHTML = html;
+}
 
-  // ── 3. 組合輸出 ──
-  const nowStr = new Date().toLocaleString('zh-TW');
+// ══════════════════════════════════════════════
+//  Export
+// ══════════════════════════════════════════════
+function exportTxt() {
+  const d    = outputData || {};
+  const nowS = new Date().toLocaleString('zh-TW');
   const lines = [
     '【會議紀錄】',
-    '日期：' + nowStr,
-    '議程：' + (agenda || '（未填寫）'),
-    '參與者：' + (participants || '（未填寫）'),
+    '日期：' + nowS,
+    '名稱：' + mtgTitle,
+    '參與者：' + (mtgPtcp || '（未填）'),
     '',
-    '════════════════════════',
-    '一、會議摘要（AI 生成）',
-    '════════════════════════',
-    aiSummary || '（無）',
+    '══════════════════════',
+    '一、討論摘要',
+    '══════════════════════',
+    d.summary || '（無）',
     '',
-    '════════════════════════',
-    '二、AI 對話紀錄',
-    '════════════════════════',
-    aiDialogue || '（本次會議未使用 AI 對話功能）'
+    '══════════════════════',
+    '二、重要決議',
+    '══════════════════════',
+    ...(d.decisions?.length
+      ? d.decisions.map((v, i) => `${i + 1}. ${v}`)
+      : ['（無明確決議）']),
+    '',
+    '══════════════════════',
+    '三、行動事項',
+    '══════════════════════',
+    ...(d.tasks?.length
+      ? d.tasks.map((t, i) =>
+          `${i + 1}. ${t.task}\n` +
+          `   負責人：${t.assignee} ｜ 截止：${t.deadline} ｜ 優先：${t.priority}\n` +
+          `   備注：${t.notes}`)
+      : ['（無明確行動事項）'])
   ];
 
-  // 加 UTF-8 BOM 避免 Windows 亂碼
-  const BOM = '\uFEFF';
-  const blob = new Blob([BOM + lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+  const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+  dlFile(blob, 'meeting_' + dateStr() + '.txt');
+}
+
+function exportXls() {
+  const d  = outputData || {};
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Summary & Decisions
+  const ws1 = XLSX.utils.aoa_to_sheet([
+    ['會議名稱', mtgTitle],
+    ['日期',     new Date().toLocaleDateString('zh-TW')],
+    ['參與者',   mtgPtcp],
+    [],
+    ['討論摘要'],
+    [d.summary || ''],
+    [],
+    ['重要決議'],
+    ...(d.decisions?.length ? d.decisions.map(v => [v]) : [['（無）']])
+  ]);
+  ws1['!cols'] = [{ wch: 14 }, { wch: 65 }];
+  XLSX.utils.book_append_sheet(wb, ws1, '會議摘要');
+
+  // Sheet 2: Tasks
+  const ws2 = XLSX.utils.aoa_to_sheet([
+    ['任務', '負責人 / 部門', '截止日期', '優先級', '備注'],
+    ...(d.tasks?.length
+      ? d.tasks.map(t => [t.task, t.assignee, t.deadline, t.priority, t.notes])
+      : [['（無行動事項）', '', '', '', '']])
+  ]);
+  ws2['!cols'] = [{ wch: 32 }, { wch: 16 }, { wch: 12 }, { wch: 8 }, { wch: 30 }];
+  XLSX.utils.book_append_sheet(wb, ws2, '行動事項');
+
+  XLSX.writeFile(wb, 'meeting_' + dateStr() + '.xlsx');
+}
+
+// ── Reset for next meeting ──
+function newMtg() {
+  outputData = null;
+  lastBlob   = null;
+  audioChunks = [];
+  uploadedFiles = [];
+  document.getElementById('file-list').innerHTML = '';
+  showScr('s-setup');
+}
+
+// ══════════════════════════════════════════════
+//  Utils
+// ══════════════════════════════════════════════
+function h(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function p2(n)   { return String(n).padStart(2, '0'); }
+function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
+function dateStr(){ return new Date().toISOString().slice(0, 10); }
+function dlFile(blob, name) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'meeting_' + new Date().toISOString().slice(0, 10) + '.txt';
+  a.download = name;
   a.click();
-
-  btn.disabled = false;
-  btn.textContent = '💾 匯出';
 }
-
-// ═══ Reset ═══
-function resetMtg() {
-  if (!confirm('確定要重置？逐字稿和 AI 對話都會清除。')) return;
-  stopRec(); trans=[]; msgs=[]; interim=''; pendingImgs=[];
-  renderTrans(); renderChat(); setSumBtn(); renderImgBar();
-}
-
-// ═══ Utils ═══
-function h(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function now(){ const d=new Date(); return p2(d.getHours())+':'+p2(d.getMinutes())+':'+p2(d.getSeconds()); }
-function p2(n){ return String(n).padStart(2,'0'); }
 </script>
 </body>
 </html>
