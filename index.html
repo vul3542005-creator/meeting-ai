@@ -32,6 +32,9 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 .card label{display:block;font-size:13px;font-weight:500;color:var(--t2);margin-bottom:6px}
 .card textarea,.card input[type=text],.card input[type=password]{width:100%;border:none;outline:none;font-size:15px;color:var(--t1);background:transparent;font-family:var(--font);resize:none;line-height:1.5}
 
+/* ── Placeholder styling ── */
+.card textarea::placeholder,.card input::placeholder{color:var(--t3)}
+
 /* ── Buttons ── */
 .btn{padding:13px;border:none;border-radius:14px;font-size:16px;font-weight:500;cursor:pointer;width:100%;font-family:var(--font);transition:opacity .15s}
 .btn:disabled{opacity:.5;cursor:default}
@@ -63,15 +66,22 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 /* ════ Screen 3: Recording ════ */
 #s-rec{align-items:center;justify-content:center;padding:32px 24px;gap:0}
 .rec-name{font-size:18px;font-weight:600;text-align:center;margin-bottom:6px}
-.rec-ptcp{font-size:13px;color:var(--t2);text-align:center;min-height:18px;margin-bottom:40px}
-.timer{font-size:clamp(56px,16vw,76px);font-weight:200;font-variant-numeric:tabular-nums;letter-spacing:3px;margin-bottom:8px;color:var(--t1)}
-.rec-badge{display:inline-flex;align-items:center;gap:7px;font-size:14px;color:var(--t2);margin-bottom:48px}
-.rec-dot{width:10px;height:10px;border-radius:50%;background:var(--red);animation:blink 1s infinite;flex-shrink:0}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.stop-btn{width:88px;height:88px;border-radius:50%;background:var(--red);border:none;cursor:pointer;font-size:30px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 28px rgba(224,52,52,.35);transition:transform .1s;flex-shrink:0}
-.stop-btn:active{transform:scale(.91)}
-.stop-label{font-size:13px;color:var(--t2);margin-top:12px}
-.cancel-btn{font-size:14px;color:var(--t3);background:none;border:none;cursor:pointer;font-family:var(--font);margin-top:32px;padding:8px}
+.rec-ptcp{font-size:13px;color:var(--t2);text-align:center;min-height:18px;margin-bottom:28px}
+/* REC 圓圈徽章（參考附圖） */
+.rec-circle{width:88px;height:88px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700;letter-spacing:2px;margin-bottom:24px;flex-shrink:0;animation:rec-pulse 1.6s ease-in-out infinite}
+.rec-circle.paused{animation:none;background:var(--t3);opacity:.7}
+@keyframes rec-pulse{0%,100%{box-shadow:0 0 0 0 rgba(224,52,52,.45)}60%{box-shadow:0 0 0 14px rgba(224,52,52,0)}}
+.timer{font-size:clamp(56px,16vw,76px);font-weight:200;font-variant-numeric:tabular-nums;letter-spacing:3px;margin-bottom:6px;color:var(--t1)}
+.rec-stat{font-size:14px;font-weight:500;color:var(--t2);margin-bottom:36px}
+.rec-stat.paused{color:#FF9500}
+/* 暫停＋停止按鈕排排站 */
+.rec-btns{display:flex;gap:16px;align-items:center}
+.rec-btn{display:flex;flex-direction:column;align-items:center;gap:7px;padding:16px 20px;border-radius:20px;border:none;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:600;min-width:96px;transition:transform .1s}
+.rec-btn:active{transform:scale(.93)}
+.rec-btn .bi{font-size:26px;line-height:1}
+.rec-btn.rp{background:var(--card);color:var(--t1);box-shadow:0 2px 10px rgba(0,0,0,.09)}
+.rec-btn.rs{background:var(--red);color:#fff;box-shadow:0 5px 20px rgba(224,52,52,.32)}
+.cancel-btn{font-size:14px;color:var(--t3);background:none;border:none;cursor:pointer;font-family:var(--font);margin-top:28px;padding:8px}
 
 /* ════ Screen 4: Processing ════ */
 #s-proc{align-items:center;justify-content:center;padding:32px 24px;gap:18px}
@@ -166,12 +176,23 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 <div id="s-rec" class="scr" hidden>
   <div id="rec-name" class="rec-name">會議進行中</div>
   <div id="rec-ptcp" class="rec-ptcp"></div>
+  <!-- REC 徽章（參考附圖樣式） -->
+  <div id="rec-circle" class="rec-circle">REC</div>
+  <!-- 計時器 -->
   <div id="timer" class="timer">00:00</div>
-  <div class="rec-badge">
-    <span class="rec-dot"></span>錄音中
+  <!-- 狀態文字 -->
+  <div id="rec-stat" class="rec-stat">錄音中</div>
+  <!-- 暫停 + 停止 按鈕 -->
+  <div class="rec-btns">
+    <button id="pause-btn" class="rec-btn rp" onclick="togglePause()">
+      <span id="pause-icon" class="bi">⏸️</span>
+      <span id="pause-label">暫停</span>
+    </button>
+    <button class="rec-btn rs" onclick="stopRec()">
+      <span class="bi">⏹️</span>
+      <span>停止</span>
+    </button>
   </div>
-  <button class="stop-btn" onclick="stopRec()" title="停止並開始分析">⏹️</button>
-  <div class="stop-label">點擊停止，開始 AI 分析</div>
   <button class="cancel-btn" onclick="cancelRec()">取消（不儲存本次錄音）</button>
 </div>
 
@@ -228,6 +249,7 @@ let audioChunks   = [];
 let audioStream   = null;
 let recSecs       = 0;
 let timerTick     = null;
+let isPaused      = false;  // 暫停狀態
 
 // Processing / Output
 let lastBlob   = null;
@@ -382,6 +404,12 @@ async function startMeeting() {
   // UI
   document.getElementById('rec-name').textContent = mtgTitle;
   document.getElementById('rec-ptcp').textContent = mtgPtcp;
+  isPaused = false;
+  document.getElementById('rec-circle').className = 'rec-circle';
+  document.getElementById('rec-stat').className   = 'rec-stat';
+  document.getElementById('rec-stat').textContent = '錄音中';
+  document.getElementById('pause-icon').textContent  = '⏸️';
+  document.getElementById('pause-label').textContent = '暫停';
   recSecs = 0;
   updateTimer();
   timerTick = setInterval(() => { recSecs++; updateTimer(); }, 1000);
@@ -401,21 +429,53 @@ function updateTimer() {
 
 function stopRec() {
   clearInterval(timerTick);
-  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+    if (mediaRecorder.state === 'paused') mediaRecorder.resume(); // 先恢復才能 stop
+    mediaRecorder.stop();
+  }
   if (audioStream) audioStream.getTracks().forEach(t => t.stop());
 }
 
 function cancelRec() {
   if (!confirm('確定取消？本次錄音將不會被儲存。')) return;
   clearInterval(timerTick);
+  isPaused = false;
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
     mediaRecorder.ondataavailable = null;
     mediaRecorder.onstop = null;
+    if (mediaRecorder.state === 'paused') mediaRecorder.resume();
     mediaRecorder.stop();
   }
   if (audioStream) audioStream.getTracks().forEach(t => t.stop());
   audioChunks = [];
   showScr('s-setup');
+}
+
+// ── 暫停 / 繼續 ──
+function togglePause() {
+  if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
+
+  if (isPaused) {
+    // ── 繼續錄音 ──
+    if (typeof mediaRecorder.resume === 'function') mediaRecorder.resume();
+    isPaused = false;
+    timerTick = setInterval(() => { recSecs++; updateTimer(); }, 1000);
+    document.getElementById('pause-icon').textContent  = '⏸️';
+    document.getElementById('pause-label').textContent = '暫停';
+    document.getElementById('rec-circle').className    = 'rec-circle';
+    document.getElementById('rec-stat').className      = 'rec-stat';
+    document.getElementById('rec-stat').textContent    = '錄音中';
+  } else {
+    // ── 暫停錄音（此段音頻不收錄） ──
+    if (typeof mediaRecorder.pause === 'function') mediaRecorder.pause();
+    isPaused = true;
+    clearInterval(timerTick);
+    document.getElementById('pause-icon').textContent  = '▶️';
+    document.getElementById('pause-label').textContent = '繼續';
+    document.getElementById('rec-circle').className    = 'rec-circle paused';
+    document.getElementById('rec-stat').className      = 'rec-stat paused';
+    document.getElementById('rec-stat').textContent    = '已暫停';
+  }
 }
 
 function onRecStop() {
@@ -525,6 +585,8 @@ function buildSys() {
 }
 
 async function callGemini(b64, mimeType, model = 'gemini-2.5-flash') {
+  // 'gemini-1.5-flash-retry' 是重試標記，實際呼叫仍用 1.5-flash
+  const actualModel = model === 'gemini-1.5-flash-retry' ? 'gemini-1.5-flash' : model;
   const userPrompt =
     `請仔細聆聽並分析這段會議錄音，以繁體中文輸出。` +
     `只輸出純 JSON（不含任何 markdown、說明文字或換行之外的格式），` +
@@ -557,15 +619,20 @@ async function callGemini(b64, mimeType, model = 'gemini-2.5-flash') {
   };
 
   const resp = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${actualModel}:generateContent?key=${apiKey}`,
     { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
   );
 
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
-    // Rate limit → fall back to 1.5 Flash
-    if (resp.status === 429 && model === 'gemini-2.5-flash') {
+    // 429 配額超限 or 503 伺服器過載 → 降級至 1.5-flash
+    if ((resp.status === 429 || resp.status === 503) && model === 'gemini-2.5-flash') {
       return callGemini(b64, mimeType, 'gemini-1.5-flash');
+    }
+    // 1.5-flash 也過載 → 等 3 秒再試一次
+    if ((resp.status === 429 || resp.status === 503) && model === 'gemini-1.5-flash') {
+      await delay(3000);
+      return callGemini(b64, mimeType, 'gemini-1.5-flash-retry');
     }
     throw new Error(err.error?.message || 'API 錯誤 ' + resp.status);
   }
@@ -708,6 +775,7 @@ function newMtg() {
   outputData = null;
   lastBlob   = null;
   audioChunks = [];
+  isPaused   = false;
   uploadedFiles = [];
   document.getElementById('file-list').innerHTML = '';
   showScr('s-setup');
