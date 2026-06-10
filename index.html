@@ -231,13 +231,16 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 <div id="s-out" class="scr" hidden>
   <div class="hd">
     <span id="out-date" style="font-size:12px;color:var(--t2)"></span>
-    <h2 id="out-title" style="font-size:16px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">會議紀錄</h2>
-    <button class="back" style="font-size:13px" onclick="newMtg()">新會議</button>
+    <h2 id="out-title" style="font-size:16px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">會議紀錄</h2>
+    <div style="width:52px"></div>
   </div>
   <div class="scroll-body" id="out-body"></div>
-  <div class="foot2">
-    <button class="btn-sm" onclick="exportTxt()">📄 TXT</button>
-    <button class="btn-sm" onclick="exportXls()">📊 Excel</button>
+  <div class="foot2" style="flex-direction:column;gap:8px">
+    <div style="display:flex;gap:10px">
+      <button class="btn-sm" onclick="exportTxt()">📄 TXT</button>
+      <button class="btn-sm" onclick="exportXls()">📊 Excel</button>
+    </div>
+    <button class="btn btn-bl" onclick="confirmNewMtg()">✅ 確認已儲存，開始新會議</button>
   </div>
 </div>
 
@@ -248,6 +251,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 // ══════════════════════════════════════════════
 const KEY_S   = 'gemini_key';
 const SETUP_S = 'mtg_setup_v3';
+const OUTPUT_S = 'mtg_output_v1';  // 結果暫存，防頁面意外重整
 let apiKey = localStorage.getItem(KEY_S) || '';
 
 // Meeting context
@@ -274,9 +278,29 @@ let outputData     = null;
 //  Init
 // ══════════════════════════════════════════════
 window.onload = () => {
+  // 離頁保護：在結果畫面時彈出警示
+  window.addEventListener('beforeunload', e => {
+    if (!document.getElementById('s-out').hidden) {
+      e.preventDefault();
+      return e.returnValue = '會議紀錄尚未儲存，確定要離開？';
+    }
+  });
+
   if (apiKey.length >= 20) {
     document.getElementById('inp-key').value = apiKey;
     loadForm();
+    // 若頁面意外重整，從 localStorage 恢復上次結果
+    try {
+      const saved = JSON.parse(localStorage.getItem(OUTPUT_S) || 'null');
+      if (saved && saved.outputData) {
+        outputData = saved.outputData;
+        mtgTitle   = saved.mtgTitle  || '';
+        mtgPtcp    = saved.mtgPtcp   || '';
+        renderOutput();
+        showScr('s-out');
+        return;
+      }
+    } catch(e) {}
     showScr('s-setup');
   } else {
     showScr('s-key');
@@ -623,6 +647,10 @@ async function processAudio(blob) {
   setStep(2);
   outputData = parseJSON(rawText);
   await delay(600);
+  // 存入 localStorage，防止頁面意外重整後資料消失
+  try {
+    localStorage.setItem(OUTPUT_S, JSON.stringify({ outputData, mtgTitle, mtgPtcp }));
+  } catch(e) {}
   renderOutput();
   showScr('s-out');
 }
@@ -855,6 +883,7 @@ function exportXls() {
 }
 
 function newMtg() {
+  localStorage.removeItem(OUTPUT_S);  // 確認開始新會議才清除暫存
   outputData     = null;
   lastBlob       = null;
   savedBlobs     = [];
@@ -864,6 +893,12 @@ function newMtg() {
   uploadedFiles  = [];
   document.getElementById('file-list').innerHTML = '';
   showScr('s-setup');
+}
+
+// 確認鈕：一定要按、且確認彈窗通過，才能離開結果畫面
+function confirmNewMtg() {
+  if (!confirm('確定要開始新會議？\n請先確認已下載或儲存會議紀錄。')) return;
+  newMtg();
 }
 
 // ══════════════════════════════════════════════
