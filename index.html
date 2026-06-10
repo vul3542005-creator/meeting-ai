@@ -31,8 +31,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 .card{background:var(--card);border-radius:14px;padding:14px 16px}
 .card label{display:block;font-size:13px;font-weight:500;color:var(--t2);margin-bottom:6px}
 .card textarea,.card input[type=text],.card input[type=password]{width:100%;border:none;outline:none;font-size:15px;color:var(--t1);background:transparent;font-family:var(--font);resize:none;line-height:1.5}
-
-/* ── Placeholder styling ── */
 .card textarea::placeholder,.card input::placeholder{color:var(--t3)}
 
 /* ── Buttons ── */
@@ -66,7 +64,9 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 /* ════ Screen 3: Recording ════ */
 #s-rec{align-items:center;justify-content:center;padding:32px 24px;gap:0}
 .rec-name{font-size:18px;font-weight:600;text-align:center;margin-bottom:6px}
-.rec-ptcp{font-size:13px;color:var(--t2);text-align:center;min-height:18px;margin-bottom:28px}
+.rec-ptcp{font-size:13px;color:var(--t2);text-align:center;min-height:18px;margin-bottom:6px}
+/* 補錄提示 */
+.rec-seg-note{font-size:12px;color:var(--blue);background:rgba(0,122,255,.1);padding:3px 12px;border-radius:8px;margin-bottom:20px}
 /* REC 圓圈徽章（參考附圖） */
 .rec-circle{width:88px;height:88px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700;letter-spacing:2px;margin-bottom:24px;flex-shrink:0;animation:rec-pulse 1.6s ease-in-out infinite}
 .rec-circle.paused{animation:none;background:var(--t3);opacity:.7}
@@ -88,13 +88,17 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 .proc-icon{font-size:52px}
 .proc-title{font-size:20px;font-weight:600}
 .proc-sub{font-size:14px;color:var(--t2);text-align:center;line-height:1.6}
-.steps{width:100%;display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.steps{width:100%;display:flex;flex-direction:column;gap:8px}
 .step{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--card);font-size:14px;color:var(--t1)}
 .step.s-off{color:var(--t3)}
 .step.s-ok{color:var(--green)}
 .step .si{font-size:18px;width:24px;text-align:center;flex-shrink:0}
 .step.s-on .si{display:inline-block;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* 取消 / 繼續錄音 按鈕列 */
+.proc-actions{display:flex;gap:10px;width:100%}
+.proc-actions .btn-sm{font-size:13px;padding:9px 0}
+.proc-actions .btn-cont{background:var(--blue);color:#fff;border-color:var(--blue)}
 
 /* ════ Screen 5: Output ════ */
 #s-out .hd{border-bottom:1px solid var(--border);padding-bottom:12px}
@@ -176,13 +180,15 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 <div id="s-rec" class="scr" hidden>
   <div id="rec-name" class="rec-name">會議進行中</div>
   <div id="rec-ptcp" class="rec-ptcp"></div>
-  <!-- REC 徽章（參考附圖樣式） -->
+  <!-- 補錄提示（多段時才顯示） -->
+  <div id="rec-seg-note" class="rec-seg-note" hidden></div>
+  <!-- REC 徽章 -->
   <div id="rec-circle" class="rec-circle">REC</div>
   <!-- 計時器 -->
   <div id="timer" class="timer">00:00</div>
   <!-- 狀態文字 -->
   <div id="rec-stat" class="rec-stat">錄音中</div>
-  <!-- 暫停 + 停止 按鈕 -->
+  <!-- 暫停 + 停止 -->
   <div class="rec-btns">
     <button id="pause-btn" class="rec-btn rp" onclick="togglePause()">
       <span id="pause-icon" class="bi">⏸️</span>
@@ -212,7 +218,12 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
       <span class="si">📋</span><span>生成摘要與行動事項</span>
     </div>
   </div>
-  <p id="proc-err" class="err-txt" style="margin-top:4px"></p>
+  <!-- 取消 / 繼續錄音 -->
+  <div class="proc-actions">
+    <button class="btn-sm" onclick="procCancel()">✕ 取消分析</button>
+    <button class="btn-sm btn-cont" onclick="procContinueRec()">🎤 繼續錄音</button>
+  </div>
+  <p id="proc-err" class="err-txt" style="margin-top:2px"></p>
   <button id="retry-btn" class="btn btn-gy" onclick="retryProc()" hidden style="width:auto;padding:10px 28px;margin-top:4px">重試</button>
 </div>
 
@@ -239,7 +250,7 @@ const KEY_S   = 'gemini_key';
 const SETUP_S = 'mtg_setup_v3';
 let apiKey = localStorage.getItem(KEY_S) || '';
 
-// Meeting context (filled from form each session)
+// Meeting context
 let mtgTitle = '', mtgPtcp = '', mtgAgenda = '', mtgBg = '', uploadRef = '';
 let uploadedFiles = [];
 
@@ -249,11 +260,15 @@ let audioChunks   = [];
 let audioStream   = null;
 let recSecs       = 0;
 let timerTick     = null;
-let isPaused      = false;  // 暫停狀態
+let isPaused      = false;
+
+// Multiple-segment support
+let savedBlobs  = [];   // 前幾段已錄完的 Blob
+let lastBlob    = null; // 最新一段
 
 // Processing / Output
-let lastBlob   = null;
-let outputData = null;  // { summary, decisions, tasks }
+let fetchAbortCtrl = null;  // 用於中斷 Gemini fetch
+let outputData     = null;
 
 // ══════════════════════════════════════════════
 //  Init
@@ -330,8 +345,8 @@ function readXlsx(f) {
     const r = new FileReader();
     r.onload = e => {
       try {
-        const wb  = XLSX.read(e.target.result, { type: 'array' });
-        let   out = '';
+        const wb = XLSX.read(e.target.result, { type: 'array' });
+        let out = '';
         wb.SheetNames.forEach(n => {
           out += '【' + n + '】\n' +
             XLSX.utils.sheet_to_csv(wb.Sheets[n])
@@ -377,15 +392,34 @@ async function startMeeting() {
     return;
   }
 
-  // Collect form data
-  saveForm();
-  mtgTitle   = document.getElementById('inp-title').value.trim()  || '未命名會議';
-  mtgPtcp    = document.getElementById('inp-ptcp').value.trim();
-  mtgAgenda  = document.getElementById('inp-agenda').value.trim();
-  mtgBg      = document.getElementById('inp-bg').value.trim();
-  uploadRef  = uploadedFiles.map(f => '【' + f.name + '】\n' + f.text).join('\n\n').slice(0, 8000);
+  // 全新一場會議 → 清除前段殘留
+  savedBlobs = [];
+  lastBlob   = null;
 
-  // MediaRecorder setup
+  saveForm();
+  mtgTitle  = document.getElementById('inp-title').value.trim()  || '未命名會議';
+  mtgPtcp   = document.getElementById('inp-ptcp').value.trim();
+  mtgAgenda = document.getElementById('inp-agenda').value.trim();
+  mtgBg     = document.getElementById('inp-bg').value.trim();
+  uploadRef = uploadedFiles.map(f => '【' + f.name + '】\n' + f.text).join('\n\n').slice(0, 8000);
+
+  setupRecorder();
+
+  document.getElementById('rec-name').textContent = mtgTitle;
+  document.getElementById('rec-ptcp').textContent = mtgPtcp;
+  document.getElementById('rec-seg-note').hidden  = true;
+  recSecs = 0;
+  resetRecUI();
+  updateTimer();
+  timerTick = setInterval(() => { recSecs++; updateTimer(); }, 1000);
+
+  btn.disabled = false;
+  btn.textContent = '🎤 開始錄音';
+  showScr('s-rec');
+}
+
+// 共用：初始化 MediaRecorder（不 reset recSecs，補錄時繼續計時）
+function setupRecorder() {
   audioChunks = [];
   const prefer = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'];
   const mime   = prefer.find(m => { try { return MediaRecorder.isTypeSupported(m); } catch(e) { return false; } }) || '';
@@ -399,24 +433,16 @@ async function startMeeting() {
   }
   mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
   mediaRecorder.onstop = onRecStop;
-  mediaRecorder.start(1000);  // emit data every 1 s
+  mediaRecorder.start(1000);
+}
 
-  // UI
-  document.getElementById('rec-name').textContent = mtgTitle;
-  document.getElementById('rec-ptcp').textContent = mtgPtcp;
+function resetRecUI() {
   isPaused = false;
-  document.getElementById('rec-circle').className = 'rec-circle';
-  document.getElementById('rec-stat').className   = 'rec-stat';
-  document.getElementById('rec-stat').textContent = '錄音中';
+  document.getElementById('rec-circle').className   = 'rec-circle';
+  document.getElementById('rec-stat').className     = 'rec-stat';
+  document.getElementById('rec-stat').textContent   = savedBlobs.length > 0 ? '補錄中' : '錄音中';
   document.getElementById('pause-icon').textContent  = '⏸️';
   document.getElementById('pause-label').textContent = '暫停';
-  recSecs = 0;
-  updateTimer();
-  timerTick = setInterval(() => { recSecs++; updateTimer(); }, 1000);
-
-  btn.disabled = false;
-  btn.textContent = '🎤 開始錄音';
-  showScr('s-rec');
 }
 
 function updateTimer() {
@@ -430,16 +456,17 @@ function updateTimer() {
 function stopRec() {
   clearInterval(timerTick);
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-    if (mediaRecorder.state === 'paused') mediaRecorder.resume(); // 先恢復才能 stop
+    if (mediaRecorder.state === 'paused') mediaRecorder.resume();
     mediaRecorder.stop();
   }
   if (audioStream) audioStream.getTracks().forEach(t => t.stop());
 }
 
 function cancelRec() {
-  if (!confirm('確定取消？本次錄音將不會被儲存。')) return;
+  if (!confirm('確定取消？本次錄音（含所有補錄段）將不會儲存。')) return;
   clearInterval(timerTick);
   isPaused = false;
+  savedBlobs = [];
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
     mediaRecorder.ondataavailable = null;
     mediaRecorder.onstop = null;
@@ -456,7 +483,6 @@ function togglePause() {
   if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
 
   if (isPaused) {
-    // ── 繼續錄音 ──
     if (typeof mediaRecorder.resume === 'function') mediaRecorder.resume();
     isPaused = false;
     timerTick = setInterval(() => { recSecs++; updateTimer(); }, 1000);
@@ -464,9 +490,8 @@ function togglePause() {
     document.getElementById('pause-label').textContent = '暫停';
     document.getElementById('rec-circle').className    = 'rec-circle';
     document.getElementById('rec-stat').className      = 'rec-stat';
-    document.getElementById('rec-stat').textContent    = '錄音中';
+    document.getElementById('rec-stat').textContent    = savedBlobs.length > 0 ? '補錄中' : '錄音中';
   } else {
-    // ── 暫停錄音（此段音頻不收錄） ──
     if (typeof mediaRecorder.pause === 'function') mediaRecorder.pause();
     isPaused = true;
     clearInterval(timerTick);
@@ -479,7 +504,7 @@ function togglePause() {
 }
 
 function onRecStop() {
-  const mType  = mediaRecorder.mimeType || 'audio/webm';
+  const mType = mediaRecorder.mimeType || 'audio/webm';
   lastBlob = new Blob(audioChunks, { type: mType });
   beginProcess(lastBlob);
 }
@@ -499,6 +524,48 @@ function retryProc() {
   if (lastBlob) beginProcess(lastBlob);
 }
 
+// ── 取消分析 → 丟棄所有錄音，回設定 ──
+function procCancel() {
+  if (fetchAbortCtrl) fetchAbortCtrl.abort();
+  savedBlobs = [];
+  lastBlob   = null;
+  showScr('s-setup');
+}
+
+// ── 繼續錄音 → 保留本段，回錄音畫面補錄 ──
+async function procContinueRec() {
+  if (fetchAbortCtrl) fetchAbortCtrl.abort();
+
+  // 把剛才那段存起來
+  if (lastBlob) {
+    savedBlobs.push(lastBlob);
+    lastBlob = null;
+  }
+
+  // 重新取麥克風
+  try {
+    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch(e) {
+    alert('無法取得麥克風：' + (e.message || e));
+    savedBlobs = [];
+    showScr('s-setup');
+    return;
+  }
+
+  setupRecorder();
+
+  // 顯示補錄段數提示
+  const segNote = document.getElementById('rec-seg-note');
+  segNote.textContent = `🔄 補錄第 ${savedBlobs.length + 1} 段（前 ${savedBlobs.length} 段已保留）`;
+  segNote.hidden = false;
+
+  resetRecUI();
+  updateTimer();  // recSecs 繼續累積，不重置
+  timerTick = setInterval(() => { recSecs++; updateTimer(); }, 1000);
+  showScr('s-rec');
+}
+
+// ── Steps ──
 const STEP_ICONS = ['⬆️', '🤖', '📋'];
 
 function resetSteps() {
@@ -525,13 +592,17 @@ function showProcErr(msg) {
 }
 
 async function processAudio(blob) {
-  // ── Step 0: convert blob to base64 ──
+  fetchAbortCtrl = new AbortController();
+
+  // 合併所有段（前段 + 本段）
+  const allBlobs = [...savedBlobs, blob];
+  const segCount = allBlobs.length;
+
+  // ── Step 0: 轉 base64 ──
   setStep(0);
-  let b64, mimeType;
+  let audioParts;
   try {
-    const r = await blobToBase64(blob);
-    b64      = r.data;
-    mimeType = r.mime;
+    audioParts = await blobsToBase64(allBlobs);
   } catch(e) {
     showProcErr('音頻處理失敗：' + e.message);
     return;
@@ -541,8 +612,9 @@ async function processAudio(blob) {
   setStep(1);
   let rawText;
   try {
-    rawText = await callGemini(b64, mimeType);
+    rawText = await callGemini(audioParts, segCount);
   } catch(e) {
+    if (e.name === 'AbortError') return;  // 使用者取消，靜默處理
     showProcErr('AI 分析失敗：' + e.message);
     return;
   }
@@ -555,24 +627,28 @@ async function processAudio(blob) {
   showScr('s-out');
 }
 
-async function blobToBase64(blob) {
-  const MB = blob.size / (1024 * 1024);
-  // At 24 kbps: 15 MB ≈ 83 min — should cover any typical meeting
-  if (blob.size > 15 * 1024 * 1024) {
+// 多個 Blob → base64 parts 陣列
+async function blobsToBase64(blobs) {
+  const totalSize = blobs.reduce((s, b) => s + b.size, 0);
+  const MB = totalSize / (1024 * 1024);
+  if (totalSize > 15 * 1024 * 1024) {
     throw new Error(
-      `錄音檔案過大（${MB.toFixed(1)} MB）。\n24 kbps 下約可錄 80 分鐘，建議縮短會議後重試。`
+      `錄音總大小過大（${MB.toFixed(1)} MB）。\n24 kbps 下約可錄 80 分鐘，建議縮短後重試。`
     );
   }
-
-  const mime    = blob.type.split(';')[0] || 'audio/webm';
-  const buf     = await blob.arrayBuffer();
-  const bytes   = new Uint8Array(buf);
-  const CHUNK   = 8192;
-  let   bin     = '';
-  for (let i = 0; i < bytes.length; i += CHUNK) {
-    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+  const parts = [];
+  for (const blob of blobs) {
+    const mime  = blob.type.split(';')[0] || 'audio/webm';
+    const buf   = await blob.arrayBuffer();
+    const bytes = new Uint8Array(buf);
+    const CHUNK = 8192;
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += CHUNK) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+    }
+    parts.push({ data: btoa(bin), mime });
   }
-  return { data: btoa(bin), mime };
+  return parts;
 }
 
 function buildSys() {
@@ -580,17 +656,27 @@ function buildSys() {
   if (mtgAgenda) s += '\n\n【本次會議議程】\n' + mtgAgenda;
   if (mtgBg)     s += '\n\n【背景資料 / 待決議事項】\n' + mtgBg;
   if (mtgPtcp)   s += '\n\n【參與者】' + mtgPtcp;
-  if (uploadRef) s += '\n\n【參考資料】\n' + uploadRef;
+  if (uploadRef) s += '\n\n【參考資料（請在分析與任務中主動對照以下內容）】\n' + uploadRef;
   return s;
 }
 
-async function callGemini(b64, mimeType, model = 'gemini-2.5-flash') {
+async function callGemini(audioParts, segCount = 1, model = 'gemini-2.5-flash') {
   // 'gemini-1.5-flash-retry' 是重試標記，實際呼叫仍用 1.5-flash
   const actualModel = model === 'gemini-1.5-flash-retry' ? 'gemini-1.5-flash' : model;
+
+  // 多段提示
+  const segNote = segCount > 1
+    ? `本次會議共有 ${segCount} 段錄音（含補錄），請合併分析全程。\n`
+    : '';
+  // 參考資料提示
+  const refNote = uploadRef
+    ? `請務必對照系統提示中的議程、背景資料及上傳的參考文件，分析錄音內容是否覆蓋了各項議程，並將參考資料中的待辦事項更新至任務表。\n`
+    : '';
+
   const userPrompt =
+    segNote + refNote +
     `請仔細聆聽並分析這段會議錄音，以繁體中文輸出。` +
-    `只輸出純 JSON（不含任何 markdown、說明文字或換行之外的格式），` +
-    `嚴格遵守以下結構：\n` +
+    `只輸出純 JSON（不含任何 markdown、說明文字），嚴格遵守以下結構：\n` +
     `{\n` +
     `  "summary": "整體討論摘要（條列重點，用 \\n 分隔，至少 3 點）",\n` +
     `  "decisions": ["決議1", "決議2"],\n` +
@@ -606,13 +692,12 @@ async function callGemini(b64, mimeType, model = 'gemini-2.5-flash') {
     `}\n` +
     `若無明確決議或任務，對應陣列填 []。只輸出 JSON，其他什麼都不要。`;
 
+  const inlineParts = audioParts.map(a => ({ inline_data: { mime_type: a.mime, data: a.data } }));
+
   const body = {
     contents: [{
       role : 'user',
-      parts: [
-        { inline_data: { mime_type: mimeType, data: b64 } },
-        { text: userPrompt }
-      ]
+      parts: [...inlineParts, { text: userPrompt }]
     }],
     system_instruction : { parts: [{ text: buildSys() }] },
     generationConfig   : { maxOutputTokens: 4096 }
@@ -620,19 +705,24 @@ async function callGemini(b64, mimeType, model = 'gemini-2.5-flash') {
 
   const resp = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${actualModel}:generateContent?key=${apiKey}`,
-    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }
+    {
+      method : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body   : JSON.stringify(body),
+      signal : fetchAbortCtrl?.signal
+    }
   );
 
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
     // 429 配額超限 or 503 伺服器過載 → 降級至 1.5-flash
     if ((resp.status === 429 || resp.status === 503) && model === 'gemini-2.5-flash') {
-      return callGemini(b64, mimeType, 'gemini-1.5-flash');
+      return callGemini(audioParts, segCount, 'gemini-1.5-flash');
     }
     // 1.5-flash 也過載 → 等 3 秒再試一次
     if ((resp.status === 429 || resp.status === 503) && model === 'gemini-1.5-flash') {
       await delay(3000);
-      return callGemini(b64, mimeType, 'gemini-1.5-flash-retry');
+      return callGemini(audioParts, segCount, 'gemini-1.5-flash-retry');
     }
     throw new Error(err.error?.message || 'API 錯誤 ' + resp.status);
   }
@@ -646,7 +736,6 @@ function parseJSON(text) {
   try { return JSON.parse(text); } catch(e) {}
   const m = text.match(/\{[\s\S]+\}/);
   if (m) try { return JSON.parse(m[0]); } catch(e) {}
-  // Fallback: treat raw text as summary
   return { summary: text || '（AI 未能正確輸出，請重試）', decisions: [], tasks: [] };
 }
 
@@ -661,27 +750,24 @@ function renderOutput() {
 
   let html = '';
 
-  // — Summary —
   html += `<div class="os">
     <h3>📝 討論摘要</h3>
     <div class="sum-txt">${h(d.summary || '（未產生摘要）')}</div>
   </div>`;
 
-  // — Decisions —
   if (d.decisions?.length) {
     html += `<div class="os"><h3>✅ 重要決議</h3>`;
     html += d.decisions.map(dec => `<div class="dec-row">• ${h(dec)}</div>`).join('');
     html += `</div>`;
   }
 
-  // — Task table —
   if (d.tasks?.length) {
     html += `<div class="os"><h3>📋 行動事項</h3><div class="tbl-wrap">`;
     html += `<table class="task-tbl">
       <thead><tr><th>任務</th><th>負責人</th><th>截止</th><th>優先</th></tr></thead>
       <tbody>`;
     html += d.tasks.map(t => {
-      const bc = t.priority === '高' ? 'b-h' : t.priority === '中' ? 'b-m' : 'b-l';
+      const bc   = t.priority === '高' ? 'b-h' : t.priority === '中' ? 'b-m' : 'b-l';
       const note = (t.notes && t.notes !== '-')
         ? `<div class="note-txt">${h(t.notes)}</div>` : '';
       return `<tr>
@@ -742,7 +828,6 @@ function exportXls() {
   const d  = outputData || {};
   const wb = XLSX.utils.book_new();
 
-  // Sheet 1: Summary & Decisions
   const ws1 = XLSX.utils.aoa_to_sheet([
     ['會議名稱', mtgTitle],
     ['日期',     new Date().toLocaleDateString('zh-TW')],
@@ -757,7 +842,6 @@ function exportXls() {
   ws1['!cols'] = [{ wch: 14 }, { wch: 65 }];
   XLSX.utils.book_append_sheet(wb, ws1, '會議摘要');
 
-  // Sheet 2: Tasks
   const ws2 = XLSX.utils.aoa_to_sheet([
     ['任務', '負責人 / 部門', '截止日期', '優先級', '備注'],
     ...(d.tasks?.length
@@ -770,13 +854,14 @@ function exportXls() {
   XLSX.writeFile(wb, 'meeting_' + dateStr() + '.xlsx');
 }
 
-// ── Reset for next meeting ──
 function newMtg() {
-  outputData = null;
-  lastBlob   = null;
-  audioChunks = [];
-  isPaused   = false;
-  uploadedFiles = [];
+  outputData     = null;
+  lastBlob       = null;
+  savedBlobs     = [];
+  fetchAbortCtrl = null;
+  audioChunks    = [];
+  isPaused       = false;
+  uploadedFiles  = [];
   document.getElementById('file-list').innerHTML = '';
   showScr('s-setup');
 }
@@ -789,7 +874,7 @@ function h(s) {
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-function p2(n)   { return String(n).padStart(2, '0'); }
+function p2(n)    { return String(n).padStart(2, '0'); }
 function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
 function dateStr(){ return new Date().toISOString().slice(0, 10); }
 function dlFile(blob, name) {
