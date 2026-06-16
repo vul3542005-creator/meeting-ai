@@ -231,16 +231,13 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 <div id="s-out" class="scr" hidden>
   <div class="hd">
     <span id="out-date" style="font-size:12px;color:var(--t2)"></span>
-    <h2 id="out-title" style="font-size:16px;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">會議紀錄</h2>
-    <div style="width:52px"></div>
+    <h2 id="out-title" style="font-size:16px;max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">會議紀錄</h2>
+    <button class="back" style="font-size:13px" onclick="newMtg()">新會議</button>
   </div>
   <div class="scroll-body" id="out-body"></div>
-  <div class="foot2" style="flex-direction:column;gap:8px">
-    <div style="display:flex;gap:10px">
-      <button class="btn-sm" onclick="exportTxt()">📄 TXT</button>
-      <button class="btn-sm" onclick="exportXls()">📊 Excel</button>
-    </div>
-    <button class="btn btn-bl" onclick="confirmNewMtg()">✅ 確認已儲存，開始新會議</button>
+  <div class="foot2">
+    <button class="btn-sm" onclick="exportTxt()">📄 TXT</button>
+    <button class="btn-sm" onclick="exportXls()">📊 Excel</button>
   </div>
 </div>
 
@@ -251,7 +248,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 // ══════════════════════════════════════════════
 const KEY_S   = 'gemini_key';
 const SETUP_S = 'mtg_setup_v3';
-const OUTPUT_S = 'mtg_output_v1';  // 結果暫存，防頁面意外重整
 let apiKey = localStorage.getItem(KEY_S) || '';
 
 // Meeting context
@@ -278,29 +274,9 @@ let outputData     = null;
 //  Init
 // ══════════════════════════════════════════════
 window.onload = () => {
-  // 離頁保護：在結果畫面時彈出警示
-  window.addEventListener('beforeunload', e => {
-    if (!document.getElementById('s-out').hidden) {
-      e.preventDefault();
-      return e.returnValue = '會議紀錄尚未儲存，確定要離開？';
-    }
-  });
-
   if (apiKey.length >= 20) {
     document.getElementById('inp-key').value = apiKey;
     loadForm();
-    // 若頁面意外重整，從 localStorage 恢復上次結果
-    try {
-      const saved = JSON.parse(localStorage.getItem(OUTPUT_S) || 'null');
-      if (saved && saved.outputData) {
-        outputData = saved.outputData;
-        mtgTitle   = saved.mtgTitle  || '';
-        mtgPtcp    = saved.mtgPtcp   || '';
-        renderOutput();
-        showScr('s-out');
-        return;
-      }
-    } catch(e) {}
     showScr('s-setup');
   } else {
     showScr('s-key');
@@ -647,10 +623,6 @@ async function processAudio(blob) {
   setStep(2);
   outputData = parseJSON(rawText);
   await delay(600);
-  // 存入 localStorage，防止頁面意外重整後資料消失
-  try {
-    localStorage.setItem(OUTPUT_S, JSON.stringify({ outputData, mtgTitle, mtgPtcp }));
-  } catch(e) {}
   renderOutput();
   showScr('s-out');
 }
@@ -706,7 +678,7 @@ async function callGemini(audioParts, segCount = 1, model = 'gemini-2.5-flash') 
     `請仔細聆聽並分析這段會議錄音，以繁體中文輸出。` +
     `只輸出純 JSON（不含任何 markdown、說明文字），嚴格遵守以下結構：\n` +
     `{\n` +
-    `  "summary": "整體討論摘要（條列重點，用 \\n 分隔，至少 3 點）",\n` +
+    `  "summary": "詳細討論摘要：條列所有討論重點，每點用 \\n 分隔，每點需完整描述討論內容（包含背景、過程、結論或待確認事項），不可過度濃縮，至少 4 點，每點 2~3 句以上",\n` +
     `  "decisions": ["決議1", "決議2"],\n` +
     `  "tasks": [\n` +
     `    {\n` +
@@ -728,7 +700,7 @@ async function callGemini(audioParts, segCount = 1, model = 'gemini-2.5-flash') 
       parts: [...inlineParts, { text: userPrompt }]
     }],
     system_instruction : { parts: [{ text: buildSys() }] },
-    generationConfig   : { maxOutputTokens: 4096 }
+    generationConfig   : { maxOutputTokens: 8192 }
   };
 
   const resp = await fetch(
@@ -761,10 +733,36 @@ async function callGemini(audioParts, segCount = 1, model = 'gemini-2.5-flash') 
 
 function parseJSON(text) {
   text = (text || '').replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+
+  // 1. 直接完整解析
   try { return JSON.parse(text); } catch(e) {}
+
+  // 2. 找出 {...} 區塊再解析（處理前後有多餘文字的情況）
   const m = text.match(/\{[\s\S]+\}/);
   if (m) try { return JSON.parse(m[0]); } catch(e) {}
-  return { summary: text || '（AI 未能正確輸出，請重試）', decisions: [], tasks: [] };
+
+  // 3. JSON 可能被截斷（無結尾 }）→ 逐欄位用 regex 提取
+  const extractStr = key => {
+    const re = new RegExp('"' + key + '"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"');
+    const hit = text.match(re);
+    if (!hit) return null;
+    try { return JSON.parse('"' + hit[1] + '"'); }
+    catch(e) { return hit[1].replace(/\\n/g, '\n').replace(/\\"/g, '"'); }
+  };
+  const extractArr = key => {
+    const re = new RegExp('"' + key + '"\\s*:\\s*(\\[[\\s\\S]*?\\])');
+    const hit = text.match(re);
+    if (!hit) return [];
+    try { return JSON.parse(hit[1]); } catch(e) { return []; }
+  };
+
+  const summary = extractStr('summary');
+  if (summary !== null) {
+    return { summary, decisions: extractArr('decisions'), tasks: extractArr('tasks') };
+  }
+
+  // 4. 完全無法解析
+  return { summary: '（AI 回應格式錯誤，請重試）', decisions: [], tasks: [] };
 }
 
 // ══════════════════════════════════════════════
@@ -778,9 +776,10 @@ function renderOutput() {
 
   let html = '';
 
+  const sumStr = (d.summary || '（未產生摘要）').replace(/\\n/g, '\n');
   html += `<div class="os">
     <h3>📝 討論摘要</h3>
-    <div class="sum-txt">${h(d.summary || '（未產生摘要）')}</div>
+    <div class="sum-txt">${h(sumStr)}</div>
   </div>`;
 
   if (d.decisions?.length) {
@@ -883,7 +882,6 @@ function exportXls() {
 }
 
 function newMtg() {
-  localStorage.removeItem(OUTPUT_S);  // 確認開始新會議才清除暫存
   outputData     = null;
   lastBlob       = null;
   savedBlobs     = [];
@@ -893,12 +891,6 @@ function newMtg() {
   uploadedFiles  = [];
   document.getElementById('file-list').innerHTML = '';
   showScr('s-setup');
-}
-
-// 確認鈕：一定要按、且確認彈窗通過，才能離開結果畫面
-function confirmNewMtg() {
-  if (!confirm('確定要開始新會議？\n請先確認已下載或儲存會議紀錄。')) return;
-  newMtg();
 }
 
 // ══════════════════════════════════════════════
