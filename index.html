@@ -225,6 +225,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
   </div>
   <p id="proc-err" class="err-txt" style="margin-top:2px"></p>
   <button id="retry-btn" class="btn btn-gy" onclick="retryProc()" hidden style="width:auto;padding:10px 28px;margin-top:4px">重試</button>
+  <button class="btn-sm" onclick="downloadAudioBackup()" style="width:auto;padding:9px 20px;margin-top:14px;background:var(--card)">💾 下載錄音檔備份</button>
 </div>
 
 <!-- ══════ Screen 5: Output ══════ -->
@@ -661,8 +662,8 @@ function buildSys() {
 }
 
 async function callGemini(audioParts, segCount = 1, model = 'gemini-2.5-flash') {
-  // 'gemini-1.5-flash-retry' 是重試標記，實際呼叫仍用 1.5-flash
-  const actualModel = model === 'gemini-1.5-flash-retry' ? 'gemini-1.5-flash' : model;
+  // 'gemini-2.5-flash-lite-retry' 是重試標記，實際呼叫仍用 2.5-flash-lite
+  const actualModel = model === 'gemini-2.5-flash-lite-retry' ? 'gemini-2.5-flash-lite' : model;
 
   // 多段提示
   const segNote = segCount > 1
@@ -678,7 +679,7 @@ async function callGemini(audioParts, segCount = 1, model = 'gemini-2.5-flash') 
     `請仔細聆聽並分析這段會議錄音，以繁體中文輸出。` +
     `只輸出純 JSON（不含任何 markdown、說明文字），嚴格遵守以下結構：\n` +
     `{\n` +
-    `  "summary": "詳細討論摘要：條列所有討論重點，每點用 \\n 分隔，每點需完整描述討論內容（包含背景、過程、結論或待確認事項），不可過度濃縮，至少 4 點，每點 2~3 句以上",\n` +
+    `  "summary": "整體討論摘要（條列重點，用 \\n 分隔，至少 3 點）",\n` +
     `  "decisions": ["決議1", "決議2"],\n` +
     `  "tasks": [\n` +
     `    {\n` +
@@ -700,7 +701,7 @@ async function callGemini(audioParts, segCount = 1, model = 'gemini-2.5-flash') 
       parts: [...inlineParts, { text: userPrompt }]
     }],
     system_instruction : { parts: [{ text: buildSys() }] },
-    generationConfig   : { maxOutputTokens: 8192 }
+    generationConfig   : { maxOutputTokens: 4096 }
   };
 
   const resp = await fetch(
@@ -715,14 +716,14 @@ async function callGemini(audioParts, segCount = 1, model = 'gemini-2.5-flash') 
 
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
-    // 429 配額超限 or 503 伺服器過載 → 降級至 1.5-flash
+    // 429 配額超限 or 503 伺服器過載 → 降級至 2.5-flash-lite
     if ((resp.status === 429 || resp.status === 503) && model === 'gemini-2.5-flash') {
-      return callGemini(audioParts, segCount, 'gemini-1.5-flash');
+      return callGemini(audioParts, segCount, 'gemini-2.5-flash-lite');
     }
-    // 1.5-flash 也過載 → 等 3 秒再試一次
-    if ((resp.status === 429 || resp.status === 503) && model === 'gemini-1.5-flash') {
+    // 2.5-flash-lite 也過載 → 等 3 秒再試一次
+    if ((resp.status === 429 || resp.status === 503) && model === 'gemini-2.5-flash-lite') {
       await delay(3000);
-      return callGemini(audioParts, segCount, 'gemini-1.5-flash-retry');
+      return callGemini(audioParts, segCount, 'gemini-2.5-flash-lite-retry');
     }
     throw new Error(err.error?.message || 'API 錯誤 ' + resp.status);
   }
@@ -733,36 +734,10 @@ async function callGemini(audioParts, segCount = 1, model = 'gemini-2.5-flash') 
 
 function parseJSON(text) {
   text = (text || '').replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
-
-  // 1. 直接完整解析
   try { return JSON.parse(text); } catch(e) {}
-
-  // 2. 找出 {...} 區塊再解析（處理前後有多餘文字的情況）
   const m = text.match(/\{[\s\S]+\}/);
   if (m) try { return JSON.parse(m[0]); } catch(e) {}
-
-  // 3. JSON 可能被截斷（無結尾 }）→ 逐欄位用 regex 提取
-  const extractStr = key => {
-    const re = new RegExp('"' + key + '"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"');
-    const hit = text.match(re);
-    if (!hit) return null;
-    try { return JSON.parse('"' + hit[1] + '"'); }
-    catch(e) { return hit[1].replace(/\\n/g, '\n').replace(/\\"/g, '"'); }
-  };
-  const extractArr = key => {
-    const re = new RegExp('"' + key + '"\\s*:\\s*(\\[[\\s\\S]*?\\])');
-    const hit = text.match(re);
-    if (!hit) return [];
-    try { return JSON.parse(hit[1]); } catch(e) { return []; }
-  };
-
-  const summary = extractStr('summary');
-  if (summary !== null) {
-    return { summary, decisions: extractArr('decisions'), tasks: extractArr('tasks') };
-  }
-
-  // 4. 完全無法解析
-  return { summary: '（AI 回應格式錯誤，請重試）', decisions: [], tasks: [] };
+  return { summary: text || '（AI 未能正確輸出，請重試）', decisions: [], tasks: [] };
 }
 
 // ══════════════════════════════════════════════
@@ -776,10 +751,9 @@ function renderOutput() {
 
   let html = '';
 
-  const sumStr = (d.summary || '（未產生摘要）').replace(/\\n/g, '\n');
   html += `<div class="os">
     <h3>📝 討論摘要</h3>
-    <div class="sum-txt">${h(sumStr)}</div>
+    <div class="sum-txt">${h(d.summary || '（未產生摘要）')}</div>
   </div>`;
 
   if (d.decisions?.length) {
@@ -879,6 +853,20 @@ function exportXls() {
   XLSX.utils.book_append_sheet(wb, ws2, '行動事項');
 
   XLSX.writeFile(wb, 'meeting_' + dateStr() + '.xlsx');
+}
+
+function downloadAudioBackup() {
+  const allBlobs = [...savedBlobs, ...(lastBlob ? [lastBlob] : [])];
+  if (!allBlobs.length) { alert('目前沒有可下載的錄音檔'); return; }
+  allBlobs.forEach((blob, i) => {
+    const mime = blob.type.split(';')[0] || 'audio/webm';
+    const ext  = mime.includes('ogg') ? 'ogg' : 'webm';
+    const name = allBlobs.length > 1
+      ? `meeting_audio_${dateStr()}_part${i + 1}.${ext}`
+      : `meeting_audio_${dateStr()}.${ext}`;
+    // 多段時錯開時間下載，避免瀏覽器擋下多個下載視窗
+    setTimeout(() => dlFile(blob, name), i * 400);
+  });
 }
 
 function newMtg() {
