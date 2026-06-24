@@ -16,31 +16,26 @@
 html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--font);font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%}
 #app{max-width:520px;margin:0 auto;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
 
-/* ── All screens share base ── */
 .scr{display:flex;flex-direction:column;overflow:hidden;flex:1}
 
-/* ── Shared header/footer ── */
 .hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 0;flex-shrink:0}
 .hd h2{font-size:18px;font-weight:600}
 .back{background:none;border:none;color:var(--blue);font-size:15px;cursor:pointer;font-family:var(--font);padding:4px 0}
 .scroll-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
 .foot1{padding:12px 16px 24px;flex-shrink:0}
-.foot2{padding:12px 16px 24px;display:flex;gap:10px;flex-shrink:0}
+.foot2{padding:12px 16px 24px;display:flex;gap:8px;flex-shrink:0}
 
-/* ── Cards ── */
 .card{background:var(--card);border-radius:14px;padding:14px 16px}
 .card label{display:block;font-size:13px;font-weight:500;color:var(--t2);margin-bottom:6px}
 .card textarea,.card input[type=text],.card input[type=password]{width:100%;border:none;outline:none;font-size:15px;color:var(--t1);background:transparent;font-family:var(--font);resize:none;line-height:1.5}
 .card textarea::placeholder,.card input::placeholder{color:var(--t3)}
 
-/* ── Buttons ── */
 .btn{padding:13px;border:none;border-radius:14px;font-size:16px;font-weight:500;cursor:pointer;width:100%;font-family:var(--font);transition:opacity .15s}
 .btn:disabled{opacity:.5;cursor:default}
 .btn-bl{background:var(--blue);color:#fff}
 .btn-gy{background:var(--bg);color:var(--t1);border:1px solid var(--border)}
-.btn-sm{padding:10px 0;border-radius:10px;font-size:14px;font-weight:500;border:1px solid var(--border);cursor:pointer;font-family:var(--font);flex:1;background:var(--bg);color:var(--t1)}
+.btn-sm{padding:10px 0;border-radius:10px;font-size:13px;font-weight:500;border:1px solid var(--border);cursor:pointer;font-family:var(--font);flex:1;background:var(--bg);color:var(--t1)}
 
-/* ── Error text ── */
 .err-txt{color:var(--red);font-size:13px;text-align:center;min-height:16px}
 
 /* ════ Screen 1: API Key ════ */
@@ -65,16 +60,13 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 #s-rec{align-items:center;justify-content:center;padding:32px 24px;gap:0}
 .rec-name{font-size:18px;font-weight:600;text-align:center;margin-bottom:6px}
 .rec-ptcp{font-size:13px;color:var(--t2);text-align:center;min-height:18px;margin-bottom:6px}
-/* 補錄提示 */
 .rec-seg-note{font-size:12px;color:var(--blue);background:rgba(0,122,255,.1);padding:3px 12px;border-radius:8px;margin-bottom:20px}
-/* REC 圓圈徽章（參考附圖） */
 .rec-circle{width:88px;height:88px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700;letter-spacing:2px;margin-bottom:24px;flex-shrink:0;animation:rec-pulse 1.6s ease-in-out infinite}
 .rec-circle.paused{animation:none;background:var(--t3);opacity:.7}
 @keyframes rec-pulse{0%,100%{box-shadow:0 0 0 0 rgba(224,52,52,.45)}60%{box-shadow:0 0 0 14px rgba(224,52,52,0)}}
 .timer{font-size:clamp(56px,16vw,76px);font-weight:200;font-variant-numeric:tabular-nums;letter-spacing:3px;margin-bottom:6px;color:var(--t1)}
 .rec-stat{font-size:14px;font-weight:500;color:var(--t2);margin-bottom:36px}
 .rec-stat.paused{color:#FF9500}
-/* 暫停＋停止按鈕排排站 */
 .rec-btns{display:flex;gap:16px;align-items:center}
 .rec-btn{display:flex;flex-direction:column;align-items:center;gap:7px;padding:16px 20px;border-radius:20px;border:none;cursor:pointer;font-family:var(--font);font-size:13px;font-weight:600;min-width:96px;transition:transform .1s}
 .rec-btn:active{transform:scale(.93)}
@@ -95,7 +87,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 .step .si{font-size:18px;width:24px;text-align:center;flex-shrink:0}
 .step.s-on .si{display:inline-block;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-/* 取消 / 繼續錄音 按鈕列 */
 .proc-actions{display:flex;gap:10px;width:100%}
 .proc-actions .btn-sm{font-size:13px;padding:9px 0}
 .proc-actions .btn-cont{background:var(--blue);color:#fff;border-color:var(--blue)}
@@ -118,6 +109,15 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 .b-m{background:#fff8e0;color:#a06000}
 .b-l{background:#f0fff4;color:#0a7a0a}
 .empty-msg{text-align:center;color:var(--t2);font-size:14px;padding:20px 0}
+
+/* ════ Toast ════ */
+.toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.82);color:#fff;padding:9px 20px;border-radius:20px;
+  font-size:13px;z-index:999;opacity:0;transition:opacity .35s;pointer-events:none;
+  max-width:88vw;text-align:center;line-height:1.4
+}
+.toast.show{opacity:1}
 
 [hidden]{display:none!important}
 </style>
@@ -180,15 +180,10 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 <div id="s-rec" class="scr" hidden>
   <div id="rec-name" class="rec-name">會議進行中</div>
   <div id="rec-ptcp" class="rec-ptcp"></div>
-  <!-- 補錄提示（多段時才顯示） -->
   <div id="rec-seg-note" class="rec-seg-note" hidden></div>
-  <!-- REC 徽章 -->
   <div id="rec-circle" class="rec-circle">REC</div>
-  <!-- 計時器 -->
   <div id="timer" class="timer">00:00</div>
-  <!-- 狀態文字 -->
   <div id="rec-stat" class="rec-stat">錄音中</div>
-  <!-- 暫停 + 停止 -->
   <div class="rec-btns">
     <button id="pause-btn" class="rec-btn rp" onclick="togglePause()">
       <span id="pause-icon" class="bi">⏸️</span>
@@ -218,14 +213,12 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
       <span class="si">📋</span><span>生成摘要與行動事項</span>
     </div>
   </div>
-  <!-- 取消 / 繼續錄音 -->
   <div class="proc-actions">
     <button class="btn-sm" onclick="procCancel()">✕ 取消分析</button>
     <button class="btn-sm btn-cont" onclick="procContinueRec()">🎤 繼續錄音</button>
   </div>
   <p id="proc-err" class="err-txt" style="margin-top:2px"></p>
   <button id="retry-btn" class="btn btn-gy" onclick="retryProc()" hidden style="width:auto;padding:10px 28px;margin-top:4px">重試</button>
-  <button class="btn-sm" onclick="downloadAudioBackup()" style="width:auto;padding:9px 20px;margin-top:14px;background:var(--card)">💾 下載錄音檔備份</button>
 </div>
 
 <!-- ══════ Screen 5: Output ══════ -->
@@ -236,26 +229,33 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
     <button class="back" style="font-size:13px" onclick="newMtg()">新會議</button>
   </div>
   <div class="scroll-body" id="out-body"></div>
+  <!-- 底部：TXT / Excel / 錄音備份（錄音僅本次記憶體有效時才顯示） -->
   <div class="foot2">
     <button class="btn-sm" onclick="exportTxt()">📄 TXT</button>
     <button class="btn-sm" onclick="exportXls()">📊 Excel</button>
+    <button class="btn-sm" id="dl-audio-btn" onclick="exportAudio()" hidden>🎙️ 音檔</button>
   </div>
 </div>
+
+<!-- ══════ Toast 通知 ══════ -->
+<div id="toast" class="toast"></div>
 
 </div><!-- #app -->
 <script>
 // ══════════════════════════════════════════════
-//  State
+//  常數 & 狀態
 // ══════════════════════════════════════════════
-const KEY_S   = 'gemini_key';
-const SETUP_S = 'mtg_setup_v3';
+const KEY_S    = 'gemini_key';
+const SETUP_S  = 'mtg_setup_v3';
+const OUTPUT_S = 'mtg_output_v1';   // 會議結果持久化
+
 let apiKey = localStorage.getItem(KEY_S) || '';
 
-// Meeting context
+// 會議基本資料
 let mtgTitle = '', mtgPtcp = '', mtgAgenda = '', mtgBg = '', uploadRef = '';
 let uploadedFiles = [];
 
-// Recording
+// 錄音
 let mediaRecorder = null;
 let audioChunks   = [];
 let audioStream   = null;
@@ -263,21 +263,45 @@ let recSecs       = 0;
 let timerTick     = null;
 let isPaused      = false;
 
-// Multiple-segment support
-let savedBlobs  = [];   // 前幾段已錄完的 Blob
-let lastBlob    = null; // 最新一段
+// 多段錄音
+let savedBlobs     = [];   // 前幾段已完成的 Blob
+let lastBlob       = null; // 最新一段
+let processedBlobs = [];   // 本次分析所有 Blob（供音檔下載）
 
-// Processing / Output
-let fetchAbortCtrl = null;  // 用於中斷 Gemini fetch
+// 分析 / 輸出
+let fetchAbortCtrl = null;
 let outputData     = null;
 
 // ══════════════════════════════════════════════
-//  Init
+//  初始化：嘗試恢復上次結果
 // ══════════════════════════════════════════════
 window.onload = () => {
   if (apiKey.length >= 20) {
     document.getElementById('inp-key').value = apiKey;
     loadForm();
+
+    // 嘗試從 localStorage 還原上次輸出
+    try {
+      const saved = localStorage.getItem(OUTPUT_S);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.data) {
+          outputData     = parsed.data;
+          mtgTitle       = parsed.title  || '';
+          mtgPtcp        = parsed.ptcp   || '';
+          mtgAgenda      = parsed.agenda || '';
+          mtgBg          = parsed.bg     || '';
+          processedBlobs = [];  // 重整後記憶體已清空，音檔無法取回
+          renderOutput(true);   // isRestore=true → 不自動下載
+          showScr('s-out');
+          setTimeout(() => showToast('🔄 上次會議記錄已自動恢復，可繼續下載', 4500), 400);
+          return;
+        }
+      }
+    } catch(e) {
+      localStorage.removeItem(OUTPUT_S);
+    }
+
     showScr('s-setup');
   } else {
     showScr('s-key');
@@ -305,7 +329,7 @@ function saveKey() {
 }
 
 // ══════════════════════════════════════════════
-//  Screen 2 – Setup & File Upload
+//  Screen 2 – 設定 & 上傳
 // ══════════════════════════════════════════════
 function loadForm() {
   try {
@@ -331,9 +355,9 @@ async function handleFiles(files) {
     const ext = f.name.split('.').pop().toLowerCase();
     let text = '';
     try {
-      if (ext === 'txt')              text = await f.text();
+      if (ext === 'txt')                        text = await f.text();
       else if (ext === 'xlsx' || ext === 'xls') text = await readXlsx(f);
-      else if (ext === 'docx')        text = await readDocx(f);
+      else if (ext === 'docx')                  text = await readDocx(f);
       if (text) uploadedFiles.push({ name: f.name, text });
     } catch(e) { alert('讀取失敗：' + f.name + '\n' + e.message); }
   }
@@ -377,7 +401,7 @@ function renderFiles() {
 function rmFile(i) { uploadedFiles.splice(i, 1); renderFiles(); }
 
 // ══════════════════════════════════════════════
-//  Screen 3 – Recording
+//  Screen 3 – 錄音
 // ══════════════════════════════════════════════
 async function startMeeting() {
   const btn = document.getElementById('start-btn');
@@ -393,9 +417,10 @@ async function startMeeting() {
     return;
   }
 
-  // 全新一場會議 → 清除前段殘留
-  savedBlobs = [];
-  lastBlob   = null;
+  // 全新會議 → 清除所有殘留
+  savedBlobs     = [];
+  lastBlob       = null;
+  processedBlobs = [];
 
   saveForm();
   mtgTitle  = document.getElementById('inp-title').value.trim()  || '未命名會議';
@@ -419,7 +444,6 @@ async function startMeeting() {
   showScr('s-rec');
 }
 
-// 共用：初始化 MediaRecorder（不 reset recSecs，補錄時繼續計時）
 function setupRecorder() {
   audioChunks = [];
   const prefer = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'];
@@ -439,9 +463,9 @@ function setupRecorder() {
 
 function resetRecUI() {
   isPaused = false;
-  document.getElementById('rec-circle').className   = 'rec-circle';
-  document.getElementById('rec-stat').className     = 'rec-stat';
-  document.getElementById('rec-stat').textContent   = savedBlobs.length > 0 ? '補錄中' : '錄音中';
+  document.getElementById('rec-circle').className    = 'rec-circle';
+  document.getElementById('rec-stat').className      = 'rec-stat';
+  document.getElementById('rec-stat').textContent    = savedBlobs.length > 0 ? '補錄中' : '錄音中';
   document.getElementById('pause-icon').textContent  = '⏸️';
   document.getElementById('pause-label').textContent = '暫停';
 }
@@ -479,7 +503,6 @@ function cancelRec() {
   showScr('s-setup');
 }
 
-// ── 暫停 / 繼續 ──
 function togglePause() {
   if (!mediaRecorder || mediaRecorder.state === 'inactive') return;
 
@@ -511,7 +534,7 @@ function onRecStop() {
 }
 
 // ══════════════════════════════════════════════
-//  Screen 4 – Processing
+//  Screen 4 – 處理中
 // ══════════════════════════════════════════════
 function beginProcess(blob) {
   document.getElementById('proc-err').textContent = '';
@@ -525,25 +548,22 @@ function retryProc() {
   if (lastBlob) beginProcess(lastBlob);
 }
 
-// ── 取消分析 → 丟棄所有錄音，回設定 ──
 function procCancel() {
   if (fetchAbortCtrl) fetchAbortCtrl.abort();
-  savedBlobs = [];
-  lastBlob   = null;
+  savedBlobs     = [];
+  lastBlob       = null;
+  processedBlobs = [];
   showScr('s-setup');
 }
 
-// ── 繼續錄音 → 保留本段，回錄音畫面補錄 ──
 async function procContinueRec() {
   if (fetchAbortCtrl) fetchAbortCtrl.abort();
 
-  // 把剛才那段存起來
   if (lastBlob) {
     savedBlobs.push(lastBlob);
     lastBlob = null;
   }
 
-  // 重新取麥克風
   try {
     audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch(e) {
@@ -555,18 +575,16 @@ async function procContinueRec() {
 
   setupRecorder();
 
-  // 顯示補錄段數提示
   const segNote = document.getElementById('rec-seg-note');
   segNote.textContent = `🔄 補錄第 ${savedBlobs.length + 1} 段（前 ${savedBlobs.length} 段已保留）`;
   segNote.hidden = false;
 
   resetRecUI();
-  updateTimer();  // recSecs 繼續累積，不重置
+  updateTimer();
   timerTick = setInterval(() => { recSecs++; updateTimer(); }, 1000);
   showScr('s-rec');
 }
 
-// ── Steps ──
 const STEP_ICONS = ['⬆️', '🤖', '📋'];
 
 function resetSteps() {
@@ -595,11 +613,12 @@ function showProcErr(msg) {
 async function processAudio(blob) {
   fetchAbortCtrl = new AbortController();
 
-  // 合併所有段（前段 + 本段）
+  // 合併所有段
   const allBlobs = [...savedBlobs, blob];
+  processedBlobs = allBlobs;   // 供輸出頁音檔下載
   const segCount = allBlobs.length;
 
-  // ── Step 0: 轉 base64 ──
+  // Step 0: 轉 base64
   setStep(0);
   let audioParts;
   try {
@@ -609,26 +628,25 @@ async function processAudio(blob) {
     return;
   }
 
-  // ── Step 1: call Gemini ──
+  // Step 1: 送 Gemini
   setStep(1);
   let rawText;
   try {
     rawText = await callGemini(audioParts, segCount);
   } catch(e) {
-    if (e.name === 'AbortError') return;  // 使用者取消，靜默處理
+    if (e.name === 'AbortError') return;
     showProcErr('AI 分析失敗：' + e.message);
     return;
   }
 
-  // ── Step 2: parse & render ──
+  // Step 2: 解析 & 渲染
   setStep(2);
   outputData = parseJSON(rawText);
   await delay(600);
-  renderOutput();
+  renderOutput(false);   // isRestore=false → 自動下載 TXT
   showScr('s-out');
 }
 
-// 多個 Blob → base64 parts 陣列
 async function blobsToBase64(blobs) {
   const totalSize = blobs.reduce((s, b) => s + b.size, 0);
   const MB = totalSize / (1024 * 1024);
@@ -661,15 +679,13 @@ function buildSys() {
   return s;
 }
 
+// 主模型 gemini-2.5-flash，降級至 gemini-2.5-flash-lite，再等待重試
 async function callGemini(audioParts, segCount = 1, model = 'gemini-2.5-flash') {
-  // 'gemini-2.5-flash-lite-retry' 是重試標記，實際呼叫仍用 2.5-flash-lite
   const actualModel = model === 'gemini-2.5-flash-lite-retry' ? 'gemini-2.5-flash-lite' : model;
 
-  // 多段提示
   const segNote = segCount > 1
     ? `本次會議共有 ${segCount} 段錄音（含補錄），請合併分析全程。\n`
     : '';
-  // 參考資料提示
   const refNote = uploadRef
     ? `請務必對照系統提示中的議程、背景資料及上傳的參考文件，分析錄音內容是否覆蓋了各項議程，並將參考資料中的待辦事項更新至任務表。\n`
     : '';
@@ -716,11 +732,11 @@ async function callGemini(audioParts, segCount = 1, model = 'gemini-2.5-flash') 
 
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
-    // 429 配額超限 or 503 伺服器過載 → 降級至 2.5-flash-lite
+    // 主模型過載 → 降級 lite
     if ((resp.status === 429 || resp.status === 503) && model === 'gemini-2.5-flash') {
       return callGemini(audioParts, segCount, 'gemini-2.5-flash-lite');
     }
-    // 2.5-flash-lite 也過載 → 等 3 秒再試一次
+    // lite 過載 → 等 3 秒再試一次
     if ((resp.status === 429 || resp.status === 503) && model === 'gemini-2.5-flash-lite') {
       await delay(3000);
       return callGemini(audioParts, segCount, 'gemini-2.5-flash-lite-retry');
@@ -741,13 +757,27 @@ function parseJSON(text) {
 }
 
 // ══════════════════════════════════════════════
-//  Screen 5 – Output
+//  Screen 5 – 輸出
 // ══════════════════════════════════════════════
-function renderOutput() {
+function renderOutput(isRestore = false) {
   const d = outputData || {};
+
+  // 持久化至 localStorage（新結果或恢復都存一次）
+  try {
+    localStorage.setItem(OUTPUT_S, JSON.stringify({
+      data   : outputData,
+      title  : mtgTitle,
+      ptcp   : mtgPtcp,
+      agenda : mtgAgenda,
+      bg     : mtgBg
+    }));
+  } catch(e) {}
 
   document.getElementById('out-date').textContent  = new Date().toLocaleDateString('zh-TW');
   document.getElementById('out-title').textContent = mtgTitle || '會議紀錄';
+
+  // 音檔按鈕：僅當記憶體內仍有 blob 時顯示
+  document.getElementById('dl-audio-btn').hidden = (processedBlobs.length === 0);
 
   let html = '';
 
@@ -784,10 +814,18 @@ function renderOutput() {
   }
 
   document.getElementById('out-body').innerHTML = html;
+
+  // 全新結果才自動下載 TXT；恢復舊資料不重複下載
+  if (!isRestore) {
+    setTimeout(() => {
+      exportTxt();
+      showToast('📥 TXT 備份已自動下載');
+    }, 800);
+  }
 }
 
 // ══════════════════════════════════════════════
-//  Export
+//  匯出
 // ══════════════════════════════════════════════
 function exportTxt() {
   const d    = outputData || {};
@@ -855,22 +893,25 @@ function exportXls() {
   XLSX.writeFile(wb, 'meeting_' + dateStr() + '.xlsx');
 }
 
-function downloadAudioBackup() {
-  const allBlobs = [...savedBlobs, ...(lastBlob ? [lastBlob] : [])];
-  if (!allBlobs.length) { alert('目前沒有可下載的錄音檔'); return; }
-  allBlobs.forEach((blob, i) => {
-    const mime = blob.type.split(';')[0] || 'audio/webm';
-    const ext  = mime.includes('ogg') ? 'ogg' : 'webm';
-    const name = allBlobs.length > 1
-      ? `meeting_audio_${dateStr()}_part${i + 1}.${ext}`
-      : `meeting_audio_${dateStr()}.${ext}`;
-    // 多段時錯開時間下載，避免瀏覽器擋下多個下載視窗
-    setTimeout(() => dlFile(blob, name), i * 400);
-  });
+async function exportAudio() {
+  if (!processedBlobs.length) {
+    showToast('⚠️ 錄音資料已清除（重新整理後無法取回）');
+    return;
+  }
+  showToast('🎙️ 下載錄音中…');
+  for (let i = 0; i < processedBlobs.length; i++) {
+    const blob = processedBlobs[i];
+    const ext  = blob.type.includes('ogg') ? 'ogg' : 'webm';
+    const suf  = processedBlobs.length > 1 ? `_seg${i + 1}` : '';
+    dlFile(blob, `meeting_audio_${dateStr()}${suf}.${ext}`);
+    if (i < processedBlobs.length - 1) await delay(400);
+  }
 }
 
 function newMtg() {
+  localStorage.removeItem(OUTPUT_S);   // 清除持久化記錄
   outputData     = null;
+  processedBlobs = [];
   lastBlob       = null;
   savedBlobs     = [];
   fetchAbortCtrl = null;
@@ -882,7 +923,7 @@ function newMtg() {
 }
 
 // ══════════════════════════════════════════════
-//  Utils
+//  工具函式
 // ══════════════════════════════════════════════
 function h(s) {
   return String(s)
@@ -897,6 +938,13 @@ function dlFile(blob, name) {
   a.href = URL.createObjectURL(blob);
   a.download = name;
   a.click();
+}
+function showToast(msg, ms = 3000) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.remove('show'), ms);
 }
 </script>
 </body>
