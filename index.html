@@ -6,6 +6,7 @@
 <title>會議 AI 助手</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -229,7 +230,11 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
     <button class="back" style="font-size:13px" onclick="newMtg()">新會議</button>
   </div>
   <div class="scroll-body" id="out-body"></div>
-  <!-- 底部：TXT / Excel / 錄音備份（錄音僅本次記憶體有效時才顯示） -->
+  <!-- 主要動作：一鍵下載全部檔案並嘗試關閉頁面 -->
+  <div class="foot1" style="padding-bottom:4px">
+    <button id="finish-btn" class="btn btn-bl" onclick="finishMeeting()">✅ 會議記錄完成（下載全部）</button>
+  </div>
+  <!-- 底部：TXT / Excel / 錄音備份（錄音僅本次記憶體有效時才顯示，可個別重新下載） -->
   <div class="foot2">
     <button class="btn-sm" onclick="exportTxt()">📄 TXT</button>
     <button class="btn-sm" onclick="exportXls()">📊 Excel</button>
@@ -642,6 +647,10 @@ async function processAudio(blob) {
   // Step 2: 解析 & 渲染
   setStep(2);
   outputData = parseJSON(rawText);
+  if (!outputData) {
+    showProcErr('AI 回應格式錯誤，可能是本次會議內容較長導致回應被截斷。請點選重試；若持續發生，建議將錄音分段（先「停止」下載一次，再開新會議錄後半段）。');
+    return;
+  }
   await delay(600);
   renderOutput(false);   // isRestore=false → 自動下載 TXT
   showScr('s-out');
@@ -717,7 +726,7 @@ async function callGemini(audioParts, segCount = 1, model = 'gemini-2.5-flash') 
       parts: [...inlineParts, { text: userPrompt }]
     }],
     system_instruction : { parts: [{ text: buildSys() }] },
-    generationConfig   : { maxOutputTokens: 4096 }
+    generationConfig   : { maxOutputTokens: 16384, responseMimeType: 'application/json' }
   };
 
   const resp = await fetch(
@@ -753,7 +762,7 @@ function parseJSON(text) {
   try { return JSON.parse(text); } catch(e) {}
   const m = text.match(/\{[\s\S]+\}/);
   if (m) try { return JSON.parse(m[0]); } catch(e) {}
-  return { summary: text || '（AI 未能正確輸出，請重試）', decisions: [], tasks: [] };
+  return null;  // 解析失敗，交由呼叫端顯示明確錯誤（不可硬湊結果）
 }
 
 // ══════════════════════════════════════════════
@@ -809,8 +818,6 @@ function renderOutput(isRestore = false) {
       </tr>`;
     }).join('');
     html += `</tbody></table></div></div>`;
-  } else {
-    html += `<div class="os"><div class="empty-msg">本次會議無明確行動事項</div></div>`;
   }
 
   document.getElementById('out-body').innerHTML = html;
@@ -839,25 +846,31 @@ function exportTxt() {
     '══════════════════════',
     '一、討論摘要',
     '══════════════════════',
-    d.summary || '（無）',
-    '',
-    '══════════════════════',
-    '二、重要決議',
-    '══════════════════════',
-    ...(d.decisions?.length
-      ? d.decisions.map((v, i) => `${i + 1}. ${v}`)
-      : ['（無明確決議）']),
-    '',
-    '══════════════════════',
-    '三、行動事項',
-    '══════════════════════',
-    ...(d.tasks?.length
-      ? d.tasks.map((t, i) =>
-          `${i + 1}. ${t.task}\n` +
-          `   負責人：${t.assignee} ｜ 截止：${t.deadline} ｜ 優先：${t.priority}\n` +
-          `   備注：${t.notes}`)
-      : ['（無明確行動事項）'])
+    d.summary || '（無）'
   ];
+
+  if (d.decisions?.length) {
+    lines.push(
+      '',
+      '══════════════════════',
+      '二、重要決議',
+      '══════════════════════',
+      ...d.decisions.map((v, i) => `${i + 1}. ${v}`)
+    );
+  }
+
+  if (d.tasks?.length) {
+    lines.push(
+      '',
+      '══════════════════════',
+      '三、行動事項',
+      '══════════════════════',
+      ...d.tasks.map((t, i) =>
+        `${i + 1}. ${t.task}\n` +
+        `   負責人：${t.assignee} ｜ 截止：${t.deadline} ｜ 優先：${t.priority}\n` +
+        `   備注：${t.notes}`)
+    );
+  }
 
   const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/plain;charset=utf-8' });
   dlFile(blob, 'meeting_' + dateStr() + '.txt');
@@ -867,28 +880,39 @@ function exportXls() {
   const d  = outputData || {};
   const wb = XLSX.utils.book_new();
 
-  const ws1 = XLSX.utils.aoa_to_sheet([
+  // 摘要拆成一點一列，方便閱讀與篩選（原本整段文字塞一格，不易讀）
+  const summaryPoints = (d.summary || '')
+    .split('\n')
+    .map(s => s.replace(/^\d+[.、]\s*/, '').trim())
+    .filter(Boolean);
+
+  const ws1Rows = [
     ['會議名稱', mtgTitle],
     ['日期',     new Date().toLocaleDateString('zh-TW')],
     ['參與者',   mtgPtcp],
     [],
     ['討論摘要'],
-    [d.summary || ''],
-    [],
-    ['重要決議'],
-    ...(d.decisions?.length ? d.decisions.map(v => [v]) : [['（無）']])
-  ]);
-  ws1['!cols'] = [{ wch: 14 }, { wch: 65 }];
+    ['#', '重點內容'],
+    ...(summaryPoints.length ? summaryPoints.map((p, i) => [i + 1, p]) : [['—', '（無）']])
+  ];
+
+  if (d.decisions?.length) {
+    ws1Rows.push([], ['重要決議'], ['#', '決議內容'], ...d.decisions.map((v, i) => [i + 1, v]));
+  }
+
+  const ws1 = XLSX.utils.aoa_to_sheet(ws1Rows);
+  ws1['!cols'] = [{ wch: 6 }, { wch: 70 }];
   XLSX.utils.book_append_sheet(wb, ws1, '會議摘要');
 
-  const ws2 = XLSX.utils.aoa_to_sheet([
-    ['任務', '負責人 / 部門', '截止日期', '優先級', '備注'],
-    ...(d.tasks?.length
-      ? d.tasks.map(t => [t.task, t.assignee, t.deadline, t.priority, t.notes])
-      : [['（無行動事項）', '', '', '', '']])
-  ]);
-  ws2['!cols'] = [{ wch: 32 }, { wch: 16 }, { wch: 12 }, { wch: 8 }, { wch: 30 }];
-  XLSX.utils.book_append_sheet(wb, ws2, '行動事項');
+  // 沒有行動事項時，直接不建立這個工作表
+  if (d.tasks?.length) {
+    const ws2 = XLSX.utils.aoa_to_sheet([
+      ['任務', '負責人 / 部門', '截止日期', '優先級', '備注'],
+      ...d.tasks.map(t => [t.task, t.assignee, t.deadline, t.priority, t.notes])
+    ]);
+    ws2['!cols'] = [{ wch: 32 }, { wch: 16 }, { wch: 12 }, { wch: 8 }, { wch: 30 }];
+    XLSX.utils.book_append_sheet(wb, ws2, '行動事項');
+  }
 
   XLSX.writeFile(wb, 'meeting_' + dateStr() + '.xlsx');
 }
@@ -906,6 +930,86 @@ async function exportAudio() {
     dlFile(blob, `meeting_audio_${dateStr()}${suf}.${ext}`);
     if (i < processedBlobs.length - 1) await delay(400);
   }
+}
+
+async function exportScreenshot() {
+  if (typeof html2canvas === 'undefined') {
+    showToast('⚠️ 截圖功能載入失敗，已略過（其餘檔案仍會下載）');
+    return;
+  }
+  const appEl  = document.getElementById('app');
+  const scrEl  = document.getElementById('s-out');
+  const bodyEl = document.getElementById('out-body');
+  const foot1s = scrEl.querySelectorAll('.foot1');
+  const foot2s = scrEl.querySelectorAll('.foot2');
+
+  // 暫時展開整個畫面高度，避免截圖只拍到目前捲動到的可視範圍
+  const prev = {
+    appH: appEl.style.height, appOf: appEl.style.overflow,
+    scrOf: scrEl.style.overflow,
+    bodyOf: bodyEl.style.overflow, bodyFlex: bodyEl.style.flex, bodyH: bodyEl.style.height
+  };
+  appEl.style.height   = 'auto';
+  appEl.style.overflow = 'visible';
+  scrEl.style.overflow = 'visible';
+  bodyEl.style.overflow = 'visible';
+  bodyEl.style.flex     = 'none';
+  bodyEl.style.height   = 'auto';
+  foot1s.forEach(el => el.style.visibility = 'hidden');
+  foot2s.forEach(el => el.style.visibility = 'hidden');
+
+  try {
+    const canvas = await html2canvas(scrEl, {
+      backgroundColor: '#f2f2f7',
+      scale: 2,
+      useCORS: true
+    });
+    const blob = await new Promise(res => canvas.toBlob(res, 'image/png'));
+    if (blob) dlFile(blob, 'meeting_' + dateStr() + '.png');
+  } catch(e) {
+    showToast('⚠️ 截圖產生失敗：' + e.message);
+  } finally {
+    appEl.style.height    = prev.appH;
+    appEl.style.overflow  = prev.appOf;
+    scrEl.style.overflow  = prev.scrOf;
+    bodyEl.style.overflow = prev.bodyOf;
+    bodyEl.style.flex     = prev.bodyFlex;
+    bodyEl.style.height   = prev.bodyH;
+    foot1s.forEach(el => el.style.visibility = '');
+    foot2s.forEach(el => el.style.visibility = '');
+  }
+}
+
+async function finishMeeting() {
+  const btn = document.getElementById('finish-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 下載中，請稍候…';
+
+  try {
+    exportTxt();
+    await delay(500);
+    exportXls();
+    await delay(500);
+    if (processedBlobs.length) {
+      await exportAudio();
+      await delay(400);
+    }
+    await exportScreenshot();
+  } catch(e) {
+    showToast('⚠️ 下載過程發生錯誤：' + e.message, 4000);
+  }
+
+  showToast('✅ 全部檔案已下載，即將嘗試關閉頁面', 3000);
+  await delay(1200);
+
+  // 僅在此分頁是由程式（window.open）開啟時才能自動關閉；
+  // 手機瀏覽器直接點連結進來的分頁，基於安全限制無法用程式關閉。
+  window.close();
+
+  setTimeout(() => {
+    btn.disabled = false;
+    btn.textContent = '✅ 已完成下載（請手動關閉分頁）';
+  }, 500);
 }
 
 function newMtg() {
