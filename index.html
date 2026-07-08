@@ -145,6 +145,11 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
     <div style="width:52px"></div>
   </div>
   <div class="scroll-body">
+    <div class="card" id="recover-banner" hidden style="border:1px solid var(--blue);background:#eaf3ff">
+      <label style="color:var(--blue)">🗂 尚有未處理的會議紀錄</label>
+      <div id="recover-info" style="font-size:14px;margin-bottom:10px"></div>
+      <button class="btn-sm" style="width:100%" onclick="viewRecovered()">📂 查看該筆紀錄</button>
+    </div>
     <div class="card">
       <label>會議名稱</label>
       <input id="inp-title" type="text" placeholder="例：本週部門例會">
@@ -173,7 +178,42 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
     <div class="warn-card">🔒 錄音結束後將上傳至 Google AI 伺服器進行分析，請注意會議資訊安全。</div>
   </div>
   <div class="foot1">
-    <button id="start-btn" class="btn btn-bl" onclick="startMeeting()">🎤 開始錄音</button>
+    <button id="start-btn" class="btn btn-bl" onclick="goToReady()">➡️ 準備開始會議</button>
+  </div>
+</div>
+
+<!-- ══════ Screen 2.5: 確認頁（過渡頁，尚未錄音） ══════ -->
+<div id="s-ready" class="scr" hidden>
+  <div class="hd">
+    <button class="back" onclick="showScr('s-setup')">← 修改資訊</button>
+    <h2>確認會議資訊</h2>
+    <div style="width:64px"></div>
+  </div>
+  <div class="scroll-body">
+    <div class="card">
+      <label>會議名稱</label>
+      <div id="ready-title" style="font-size:15px"></div>
+    </div>
+    <div class="card" id="ready-ptcp-card" hidden>
+      <label>參與者</label>
+      <div id="ready-ptcp" style="font-size:15px"></div>
+    </div>
+    <div class="card" id="ready-agenda-card" hidden>
+      <label>議程</label>
+      <div id="ready-agenda" style="font-size:15px;white-space:pre-wrap"></div>
+    </div>
+    <div class="card" id="ready-bg-card" hidden>
+      <label>背景資料 / 待決議事項</label>
+      <div id="ready-bg" style="font-size:15px;white-space:pre-wrap"></div>
+    </div>
+    <div class="card" id="ready-files-card" hidden>
+      <label>參考資料</label>
+      <div id="ready-files" style="font-size:13px;color:var(--t2)"></div>
+    </div>
+    <div class="warn-card">🎤 按下「開始錄音」的當下麥克風就會開始收音，請確認上方資訊無誤後再開始。若要修改，請按左上角「修改資訊」。</div>
+  </div>
+  <div class="foot1">
+    <button id="ready-start-btn" class="btn btn-bl" onclick="startRecordingNow()">🔴 開始錄音</button>
   </div>
 </div>
 
@@ -196,6 +236,29 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
     </button>
   </div>
   <button class="cancel-btn" onclick="cancelRec()">取消（不儲存本次錄音）</button>
+</div>
+
+<!-- ══════ Screen 3.5: 錄音完成，等待手動分析 ══════ -->
+<div id="s-done" class="scr" hidden>
+  <div class="hd">
+    <h2>錄音已完成</h2>
+    <div style="width:52px"></div>
+  </div>
+  <div class="scroll-body">
+    <div class="card" style="text-align:center">
+      <div style="font-size:40px;margin-bottom:8px">🎬</div>
+      <div id="done-name" style="font-size:16px;font-weight:600"></div>
+      <div id="done-info" style="font-size:13px;color:var(--t2);margin-top:4px"></div>
+    </div>
+    <div class="warn-card">確認會議內容都錄完了嗎？按下「開始 AI 分析」後才會把錄音上傳至 Google AI 伺服器進行分析。</div>
+  </div>
+  <div class="foot1" style="padding-bottom:4px">
+    <button class="btn btn-bl" onclick="beginProcess(lastBlob)">🤖 開始 AI 分析</button>
+  </div>
+  <div class="foot2">
+    <button class="btn-sm" onclick="procContinueRec()">🎤 繼續錄音</button>
+    <button class="btn-sm" onclick="procCancel()">🗑 捨棄本次錄音</button>
+  </div>
 </div>
 
 <!-- ══════ Screen 4: Processing ══════ -->
@@ -276,6 +339,7 @@ let processedBlobs = [];   // 本次分析所有 Blob（供音檔下載）
 // 分析 / 輸出
 let fetchAbortCtrl = null;
 let outputData     = null;
+let _recoveredData = null;  // 尚未下載/確認完成的上次會議紀錄（設定頁提示卡用）
 
 // ══════════════════════════════════════════════
 //  初始化：嘗試恢復上次結果
@@ -284,37 +348,52 @@ window.onload = () => {
   if (apiKey.length >= 20) {
     document.getElementById('inp-key').value = apiKey;
     loadForm();
-
-    // 嘗試從 localStorage 還原上次輸出
-    try {
-      const saved = localStorage.getItem(OUTPUT_S);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed?.data) {
-          outputData     = parsed.data;
-          mtgTitle       = parsed.title  || '';
-          mtgPtcp        = parsed.ptcp   || '';
-          mtgAgenda      = parsed.agenda || '';
-          mtgBg          = parsed.bg     || '';
-          processedBlobs = [];  // 重整後記憶體已清空，音檔無法取回
-          renderOutput(true);   // isRestore=true → 不自動下載
-          showScr('s-out');
-          setTimeout(() => showToast('🔄 上次會議記錄已自動恢復，可繼續下載', 4500), 400);
-          return;
-        }
-      }
-    } catch(e) {
-      localStorage.removeItem(OUTPUT_S);
-    }
-
+    checkSavedOutput();
     showScr('s-setup');
   } else {
     showScr('s-key');
   }
 };
 
+// 檢查是否有尚未下載/確認完成的舊紀錄，只顯示提示卡，不強制跳轉畫面
+function checkSavedOutput() {
+  try {
+    const saved = localStorage.getItem(OUTPUT_S);
+    if (!saved) { hideRecoverBanner(); return; }
+    const parsed = JSON.parse(saved);
+    if (parsed?.data) {
+      _recoveredData = parsed;
+      document.getElementById('recover-info').textContent =
+        (parsed.title || '未命名會議') + '（尚未確認完成，可能是上次意外關閉頁面）';
+      document.getElementById('recover-banner').hidden = false;
+    } else {
+      hideRecoverBanner();
+    }
+  } catch(e) {
+    localStorage.removeItem(OUTPUT_S);
+    hideRecoverBanner();
+  }
+}
+
+function hideRecoverBanner() {
+  _recoveredData = null;
+  document.getElementById('recover-banner').hidden = true;
+}
+
+function viewRecovered() {
+  if (!_recoveredData) return;
+  outputData     = _recoveredData.data;
+  mtgTitle       = _recoveredData.title  || '';
+  mtgPtcp        = _recoveredData.ptcp   || '';
+  mtgAgenda      = _recoveredData.agenda || '';
+  mtgBg          = _recoveredData.bg     || '';
+  processedBlobs = [];  // 重整後記憶體已清空，音檔無法取回
+  renderOutput(true);   // isRestore=true → 不重複自動下載
+  showScr('s-out');
+}
+
 function showScr(id) {
-  ['s-key','s-setup','s-rec','s-proc','s-out'].forEach(s => {
+  ['s-key','s-setup','s-ready','s-rec','s-done','s-proc','s-out'].forEach(s => {
     document.getElementById(s).hidden = (s !== id);
   });
 }
@@ -408,8 +487,41 @@ function rmFile(i) { uploadedFiles.splice(i, 1); renderFiles(); }
 // ══════════════════════════════════════════════
 //  Screen 3 – 錄音
 // ══════════════════════════════════════════════
-async function startMeeting() {
-  const btn = document.getElementById('start-btn');
+// Step 1：儲存表單資料並進入「確認頁」，此時尚未要求麥克風權限、也還沒開始錄音
+function goToReady() {
+  saveForm();
+  mtgTitle  = document.getElementById('inp-title').value.trim()  || '未命名會議';
+  mtgPtcp   = document.getElementById('inp-ptcp').value.trim();
+  mtgAgenda = document.getElementById('inp-agenda').value.trim();
+  mtgBg     = document.getElementById('inp-bg').value.trim();
+  uploadRef = uploadedFiles.map(f => '【' + f.name + '】\n' + f.text).join('\n\n').slice(0, 8000);
+
+  document.getElementById('ready-title').textContent = mtgTitle;
+
+  const ptcpCard = document.getElementById('ready-ptcp-card');
+  if (mtgPtcp) { document.getElementById('ready-ptcp').textContent = mtgPtcp; ptcpCard.hidden = false; }
+  else ptcpCard.hidden = true;
+
+  const agendaCard = document.getElementById('ready-agenda-card');
+  if (mtgAgenda) { document.getElementById('ready-agenda').textContent = mtgAgenda; agendaCard.hidden = false; }
+  else agendaCard.hidden = true;
+
+  const bgCard = document.getElementById('ready-bg-card');
+  if (mtgBg) { document.getElementById('ready-bg').textContent = mtgBg; bgCard.hidden = false; }
+  else bgCard.hidden = true;
+
+  const filesCard = document.getElementById('ready-files-card');
+  if (uploadedFiles.length) {
+    document.getElementById('ready-files').textContent = uploadedFiles.map(f => '📄 ' + f.name).join('、');
+    filesCard.hidden = false;
+  } else filesCard.hidden = true;
+
+  showScr('s-ready');
+}
+
+// Step 2：在確認頁按下才真正要求麥克風權限，並開始錄音
+async function startRecordingNow() {
+  const btn = document.getElementById('ready-start-btn');
   btn.disabled = true;
   btn.textContent = '⏳ 等待麥克風授權…';
 
@@ -417,7 +529,7 @@ async function startMeeting() {
     audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch(e) {
     btn.disabled = false;
-    btn.textContent = '🎤 開始錄音';
+    btn.textContent = '🔴 開始錄音';
     alert('無法取得麥克風：' + (e.message || e));
     return;
   }
@@ -426,13 +538,6 @@ async function startMeeting() {
   savedBlobs     = [];
   lastBlob       = null;
   processedBlobs = [];
-
-  saveForm();
-  mtgTitle  = document.getElementById('inp-title').value.trim()  || '未命名會議';
-  mtgPtcp   = document.getElementById('inp-ptcp').value.trim();
-  mtgAgenda = document.getElementById('inp-agenda').value.trim();
-  mtgBg     = document.getElementById('inp-bg').value.trim();
-  uploadRef = uploadedFiles.map(f => '【' + f.name + '】\n' + f.text).join('\n\n').slice(0, 8000);
 
   setupRecorder();
 
@@ -445,7 +550,7 @@ async function startMeeting() {
   timerTick = setInterval(() => { recSecs++; updateTimer(); }, 1000);
 
   btn.disabled = false;
-  btn.textContent = '🎤 開始錄音';
+  btn.textContent = '🔴 開始錄音';
   showScr('s-rec');
 }
 
@@ -505,7 +610,7 @@ function cancelRec() {
   }
   if (audioStream) audioStream.getTracks().forEach(t => t.stop());
   audioChunks = [];
-  showScr('s-setup');
+  showScr('s-ready');
 }
 
 function togglePause() {
@@ -535,7 +640,19 @@ function togglePause() {
 function onRecStop() {
   const mType = mediaRecorder.mimeType || 'audio/webm';
   lastBlob = new Blob(audioChunks, { type: mType });
-  beginProcess(lastBlob);
+  showDoneScreen();
+}
+
+function showDoneScreen() {
+  document.getElementById('done-name').textContent = mtgTitle;
+  const segCount = savedBlobs.length + 1;
+  const hh = Math.floor(recSecs / 3600);
+  const mm = Math.floor((recSecs % 3600) / 60);
+  const ss = recSecs % 60;
+  const durStr = (hh > 0 ? p2(hh) + ':' : '') + p2(mm) + ':' + p2(ss);
+  document.getElementById('done-info').textContent =
+    `錄音時長 ${durStr}` + (segCount > 1 ? `（共 ${segCount} 段）` : '');
+  showScr('s-done');
 }
 
 // ══════════════════════════════════════════════
@@ -558,7 +675,7 @@ function procCancel() {
   savedBlobs     = [];
   lastBlob       = null;
   processedBlobs = [];
-  showScr('s-setup');
+  showScr('s-ready');
 }
 
 async function procContinueRec() {
@@ -574,7 +691,7 @@ async function procContinueRec() {
   } catch(e) {
     alert('無法取得麥克風：' + (e.message || e));
     savedBlobs = [];
-    showScr('s-setup');
+    showScr('s-ready');
     return;
   }
 
@@ -1000,6 +1117,10 @@ async function finishMeeting() {
   }
 
   showToast('✅ 全部檔案已下載，即將嘗試關閉頁面', 3000);
+
+  // 已完整下載，清除暫存紀錄，避免下次開啟頁面時仍顯示「未處理紀錄」提示
+  try { localStorage.removeItem(OUTPUT_S); } catch(e) {}
+
   await delay(1200);
 
   // 僅在此分頁是由程式（window.open）開啟時才能自動關閉；
@@ -1023,6 +1144,7 @@ function newMtg() {
   isPaused       = false;
   uploadedFiles  = [];
   document.getElementById('file-list').innerHTML = '';
+  hideRecoverBanner();
   showScr('s-setup');
 }
 
