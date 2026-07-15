@@ -293,15 +293,16 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
     <button class="back" style="font-size:13px" onclick="newMtg()">新會議</button>
   </div>
   <div class="scroll-body" id="out-body"></div>
-  <!-- 主要動作：一鍵下載全部檔案並嘗試關閉頁面 -->
-  <div class="foot1" style="padding-bottom:4px">
-    <button id="finish-btn" class="btn btn-bl" onclick="finishMeeting()">✅ 會議記錄完成（下載全部）</button>
-  </div>
-  <!-- 底部：TXT / Excel / 錄音備份（錄音僅本次記憶體有效時才顯示，可個別重新下載） -->
-  <div class="foot2">
+  <!-- 分開下載：每個檔案各自獨立按鈕，避免瀏覽器擋下連續自動下載 -->
+  <div class="foot2" style="padding-top:12px">
     <button class="btn-sm" onclick="exportTxt()">📄 TXT</button>
     <button class="btn-sm" onclick="exportXls()">📊 Excel</button>
     <button class="btn-sm" id="dl-audio-btn" onclick="exportAudio()" hidden>🎙️ 音檔</button>
+    <button class="btn-sm" onclick="exportScreenshot()">📸 截圖</button>
+  </div>
+  <!-- 主要動作：確認都下載完後才關閉會議 -->
+  <div class="foot1" style="padding-top:4px">
+    <button id="close-btn" class="btn btn-bl" onclick="closeMeeting()">🔒 關閉會議</button>
   </div>
 </div>
 
@@ -1097,40 +1098,22 @@ async function exportScreenshot() {
   }
 }
 
-async function finishMeeting() {
-  const btn = document.getElementById('finish-btn');
-  btn.disabled = true;
-  btn.textContent = '⏳ 下載中，請稍候…';
+// 關閉會議：不做任何自動下載，只做防呆確認後清除暫存紀錄並嘗試關閉頁面。
+// 各檔案（TXT / Excel / 音檔 / 截圖）一律由使用者自行點擊上方個別按鈕下載，
+// 避免瀏覽器靜默擋下連續自動下載而遺漏檔案。
+function closeMeeting() {
+  const ok = confirm('確定都有下載完畢嗎？\n（TXT / Excel / 音檔 / 截圖，關閉後將無法再從此頁面下載）');
+  if (!ok) return;
 
-  try {
-    exportTxt();
-    await delay(500);
-    exportXls();
-    await delay(500);
-    if (processedBlobs.length) {
-      await exportAudio();
-      await delay(400);
-    }
-    await exportScreenshot();
-  } catch(e) {
-    showToast('⚠️ 下載過程發生錯誤：' + e.message, 4000);
-  }
-
-  showToast('✅ 全部檔案已下載，即將嘗試關閉頁面', 3000);
-
-  // 已完整下載，清除暫存紀錄，避免下次開啟頁面時仍顯示「未處理紀錄」提示
+  // 使用者確認後才清除暫存紀錄，避免誤觸就遺失尚未下載的資料
   try { localStorage.removeItem(OUTPUT_S); } catch(e) {}
 
-  await delay(1200);
-
-  // 僅在此分頁是由程式（window.open）開啟時才能自動關閉；
-  // 手機瀏覽器直接點連結進來的分頁，基於安全限制無法用程式關閉。
-  window.close();
-
+  showToast('✅ 會議已關閉，即將嘗試關閉頁面', 2500);
   setTimeout(() => {
-    btn.disabled = false;
-    btn.textContent = '✅ 已完成下載（請手動關閉分頁）';
-  }, 500);
+    window.close();
+    // 若瀏覽器安全限制無法自動關閉（例如非程式開啟的分頁），提示使用者手動關閉
+    showToast('請手動關閉此分頁', 3000);
+  }, 600);
 }
 
 function newMtg() {
