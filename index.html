@@ -37,7 +37,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 .btn-gy{background:var(--bg);color:var(--t1);border:1px solid var(--border)}
 .btn-sm{padding:10px 0;border-radius:10px;font-size:13px;font-weight:500;border:1px solid var(--border);cursor:pointer;font-family:var(--font);flex:1;background:var(--bg);color:var(--t1)}
 
-.err-txt{color:var(--red);font-size:13px;text-align:center;min-height:16px}
+.err-txt{color:var(--red);font-size:13px;text-align:center;min-height:16px;white-space:pre-line}
 
 /* ════ Screen 1: API Key ════ */
 #s-key{align-items:center;justify-content:center;padding:32px 24px;gap:16px}
@@ -77,7 +77,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 .cancel-btn{font-size:14px;color:var(--t3);background:none;border:none;cursor:pointer;font-family:var(--font);margin-top:28px;padding:8px}
 
 /* ════ Screen 4: Processing ════ */
-#s-proc{align-items:center;justify-content:center;padding:32px 24px;gap:18px}
+#s-proc{align-items:center;justify-content:center;justify-content:safe center;padding:32px 24px;gap:16px;overflow-y:auto}
 .proc-icon{font-size:52px}
 .proc-title{font-size:20px;font-weight:600}
 .proc-sub{font-size:14px;color:var(--t2);text-align:center;line-height:1.6}
@@ -88,9 +88,22 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 .step .si{font-size:18px;width:24px;text-align:center;flex-shrink:0}
 .step.s-on .si{display:inline-block;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.proc-actions{display:flex;gap:10px;width:100%}
+.proc-actions{display:flex;gap:8px;width:100%}
 .proc-actions .btn-sm{font-size:13px;padding:9px 0}
 .proc-actions .btn-cont{background:var(--blue);color:#fff;border-color:var(--blue)}
+.err-btns{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.err-btns .btn{width:auto;padding:10px 22px;font-size:14px}
+
+/* 問題檢查結果 */
+.diag-box{width:100%;background:var(--card);border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;text-align:left;flex-shrink:0}
+.diag-row{padding:7px 0;border-bottom:1px solid var(--bg)}
+.diag-row:last-child{border-bottom:none}
+.diag-t{font-weight:600}
+.diag-ok .diag-t{color:#0a7a0a}
+.diag-bad .diag-t{color:var(--red)}
+.diag-warn .diag-t{color:#a06000}
+.diag-info .diag-t{color:var(--t1)}
+.diag-raw{font-size:11px;color:var(--t2);word-break:break-all;margin-top:2px}
 
 /* ════ Screen 5: Output ════ */
 #s-out .hd{border-bottom:1px solid var(--border);padding-bottom:12px}
@@ -109,7 +122,6 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 .b-h{background:#fff0f0;color:#c00}
 .b-m{background:#fff8e0;color:#a06000}
 .b-l{background:#f0fff4;color:#0a7a0a}
-.empty-msg{text-align:center;color:var(--t2);font-size:14px;padding:20px 0}
 
 /* ════ Toast ════ */
 .toast{
@@ -235,7 +247,7 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
       <span>停止</span>
     </button>
   </div>
-  <button class="cancel-btn" onclick="cancelRec()">取消（不儲存本次錄音）</button>
+  <button id="cancel-rec-btn" class="cancel-btn" onclick="cancelRec()">取消（不儲存本次錄音）</button>
 </div>
 
 <!-- ══════ Screen 3.5: 錄音完成，等待手動分析 ══════ -->
@@ -250,6 +262,8 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
       <div id="done-name" style="font-size:16px;font-weight:600"></div>
       <div id="done-info" style="font-size:13px;color:var(--t2);margin-top:4px"></div>
     </div>
+    <!-- 分析失敗或取消後回到此頁時顯示 -->
+    <div id="done-fail-note" class="warn-card" hidden></div>
     <div class="warn-card">確認會議內容都錄完了嗎？按下「開始 AI 分析」後才會把錄音上傳至 Google AI 伺服器進行分析。</div>
   </div>
   <div class="foot1" style="padding-bottom:4px">
@@ -257,14 +271,15 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
   </div>
   <div class="foot2">
     <button class="btn-sm" onclick="procContinueRec()">🎤 繼續錄音</button>
-    <button class="btn-sm" onclick="procCancel()">🗑 捨棄本次錄音</button>
+    <button class="btn-sm" onclick="dlPendingAudio()">💾 下載錄音檔</button>
+    <button class="btn-sm" onclick="discardRec()">🗑 捨棄錄音</button>
   </div>
 </div>
 
 <!-- ══════ Screen 4: Processing ══════ -->
 <div id="s-proc" class="scr" hidden>
   <div class="proc-icon">🤖</div>
-  <div class="proc-title">AI 分析中</div>
+  <div id="proc-title" class="proc-title">AI 分析中</div>
   <div id="proc-sub" class="proc-sub">正在處理會議錄音，請稍候…</div>
   <div class="steps">
     <div class="step" id="step-0">
@@ -277,12 +292,18 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
       <span class="si">📋</span><span>生成摘要與行動事項</span>
     </div>
   </div>
+  <!-- 取消分析 = 回到「錄音已完成」頁，錄音不會被刪除 -->
   <div class="proc-actions">
     <button class="btn-sm" onclick="procCancel()">✕ 取消分析</button>
+    <button class="btn-sm" onclick="dlPendingAudio()">💾 下載錄音檔</button>
     <button class="btn-sm btn-cont" onclick="procContinueRec()">🎤 繼續錄音</button>
   </div>
   <p id="proc-err" class="err-txt" style="margin-top:2px"></p>
-  <button id="retry-btn" class="btn btn-gy" onclick="retryProc()" hidden style="width:auto;padding:10px 28px;margin-top:4px">重試</button>
+  <div class="err-btns">
+    <button id="retry-btn" class="btn btn-gy" onclick="retryProc()" hidden>🔄 重試</button>
+    <button id="diag-btn" class="btn btn-gy" onclick="runDiag()" hidden>🔍 檢查問題原因</button>
+  </div>
+  <div id="diag-box" class="diag-box" hidden></div>
 </div>
 
 <!-- ══════ Screen 5: Output ══════ -->
@@ -293,16 +314,15 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
     <button class="back" style="font-size:13px" onclick="newMtg()">新會議</button>
   </div>
   <div class="scroll-body" id="out-body"></div>
-  <!-- 分開下載：每個檔案各自獨立按鈕，避免瀏覽器擋下連續自動下載 -->
-  <div class="foot2" style="padding-top:12px">
+  <!-- 主要動作：一鍵下載全部檔案並嘗試關閉頁面 -->
+  <div class="foot1" style="padding-bottom:4px">
+    <button id="finish-btn" class="btn btn-bl" onclick="finishMeeting()">✅ 會議記錄完成（下載全部）</button>
+  </div>
+  <!-- 底部：TXT / Excel / 錄音備份（錄音僅本次記憶體有效時才顯示，可個別重新下載） -->
+  <div class="foot2">
     <button class="btn-sm" onclick="exportTxt()">📄 TXT</button>
     <button class="btn-sm" onclick="exportXls()">📊 Excel</button>
     <button class="btn-sm" id="dl-audio-btn" onclick="exportAudio()" hidden>🎙️ 音檔</button>
-    <button class="btn-sm" onclick="exportScreenshot()">📸 截圖</button>
-  </div>
-  <!-- 主要動作：確認都下載完後才關閉會議 -->
-  <div class="foot1" style="padding-top:4px">
-    <button id="close-btn" class="btn btn-bl" onclick="closeMeeting()">🔒 關閉會議</button>
   </div>
 </div>
 
@@ -317,6 +337,11 @@ html,body{height:100%;background:var(--bg);color:var(--t1);font-family:var(--fon
 const KEY_S    = 'gemini_key';
 const SETUP_S  = 'mtg_setup_v3';
 const OUTPUT_S = 'mtg_output_v1';   // 會議結果持久化
+
+// 使用的模型（若 Google 下架模型，只需改這兩行）
+const MODEL_MAIN = 'gemini-2.5-flash';
+const MODEL_LITE = 'gemini-2.5-flash-lite';
+const DIAG_AFTER = 3;               // 失敗幾次後顯示「檢查問題原因」
 
 let apiKey = localStorage.getItem(KEY_S) || '';
 
@@ -333,14 +358,18 @@ let timerTick     = null;
 let isPaused      = false;
 
 // 多段錄音
-let savedBlobs     = [];   // 前幾段已完成的 Blob
-let lastBlob       = null; // 最新一段
-let processedBlobs = [];   // 本次分析所有 Blob（供音檔下載）
+let savedBlobs      = [];    // 前幾段已完成的 Blob
+let lastBlob        = null;  // 最新一段
+let processedBlobs  = [];    // 本次分析所有 Blob（供音檔下載）
+let audioDownloaded = false; // 目前這批錄音是否已下載過備份
 
 // 分析 / 輸出
 let fetchAbortCtrl = null;
 let outputData     = null;
 let _recoveredData = null;  // 尚未下載/確認完成的上次會議紀錄（設定頁提示卡用）
+let failCount      = 0;     // 本次錄音 AI 分析失敗次數
+let lastErrInfo    = null;  // 最近一次失敗的詳細資訊（供問題檢查用）
+let lastFinish     = '';    // AI 最近一次回應的結束原因
 
 // ══════════════════════════════════════════════
 //  初始化：嘗試恢復上次結果
@@ -355,6 +384,15 @@ window.onload = () => {
     showScr('s-key');
   }
 };
+
+// 防呆：錄音還在記憶體裡（錄音中／錄完未分析／分析中或失敗）時，關閉或重新整理頁面會先跳出警告
+window.addEventListener('beforeunload', e => {
+  const busy = ['s-rec', 's-done', 's-proc'].some(id => !document.getElementById(id).hidden);
+  if (busy && (pendingBlobs().length || (mediaRecorder && mediaRecorder.state !== 'inactive'))) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
 
 // 檢查是否有尚未下載/確認完成的舊紀錄，只顯示提示卡，不強制跳轉畫面
 function checkSavedOutput() {
@@ -499,23 +537,12 @@ function goToReady() {
 
   document.getElementById('ready-title').textContent = mtgTitle;
 
-  const ptcpCard = document.getElementById('ready-ptcp-card');
-  if (mtgPtcp) { document.getElementById('ready-ptcp').textContent = mtgPtcp; ptcpCard.hidden = false; }
-  else ptcpCard.hidden = true;
-
-  const agendaCard = document.getElementById('ready-agenda-card');
-  if (mtgAgenda) { document.getElementById('ready-agenda').textContent = mtgAgenda; agendaCard.hidden = false; }
-  else agendaCard.hidden = true;
-
-  const bgCard = document.getElementById('ready-bg-card');
-  if (mtgBg) { document.getElementById('ready-bg').textContent = mtgBg; bgCard.hidden = false; }
-  else bgCard.hidden = true;
-
-  const filesCard = document.getElementById('ready-files-card');
-  if (uploadedFiles.length) {
-    document.getElementById('ready-files').textContent = uploadedFiles.map(f => '📄 ' + f.name).join('、');
-    filesCard.hidden = false;
-  } else filesCard.hidden = true;
+  // 有填才顯示對應卡片，沒填就隱藏
+  [['ptcp', mtgPtcp], ['agenda', mtgAgenda], ['bg', mtgBg],
+   ['files', uploadedFiles.map(f => '📄 ' + f.name).join('、')]].forEach(([k, v]) => {
+    document.getElementById('ready-' + k).textContent = v;
+    document.getElementById('ready-' + k + '-card').hidden = !v;
+  });
 
   showScr('s-ready');
 }
@@ -536,23 +563,37 @@ async function startRecordingNow() {
   }
 
   // 全新會議 → 清除所有殘留
-  savedBlobs     = [];
-  lastBlob       = null;
-  processedBlobs = [];
+  savedBlobs      = [];
+  lastBlob        = null;
+  processedBlobs  = [];
+  audioDownloaded = false;
+  failCount       = 0;
+  lastErrInfo     = null;
 
   setupRecorder();
 
   document.getElementById('rec-name').textContent = mtgTitle;
   document.getElementById('rec-ptcp').textContent = mtgPtcp;
   document.getElementById('rec-seg-note').hidden  = true;
+  document.getElementById('cancel-rec-btn').textContent = '取消（不儲存本次錄音）';
   recSecs = 0;
-  resetRecUI();
-  updateTimer();
-  timerTick = setInterval(() => { recSecs++; updateTimer(); }, 1000);
 
   btn.disabled = false;
   btn.textContent = '🔴 開始錄音';
+  enterRecScreen();
+}
+
+// 開始計時並切換到錄音畫面（新錄音與補錄共用）
+function enterRecScreen() {
+  setRecUI(false);
+  updateTimer();
+  startTimer();
   showScr('s-rec');
+}
+
+function startTimer() {
+  clearInterval(timerTick);
+  timerTick = setInterval(() => { recSecs++; updateTimer(); }, 1000);
 }
 
 function setupRecorder() {
@@ -572,21 +613,18 @@ function setupRecorder() {
   mediaRecorder.start(1000);
 }
 
-function resetRecUI() {
-  isPaused = false;
-  document.getElementById('rec-circle').className    = 'rec-circle';
-  document.getElementById('rec-stat').className      = 'rec-stat';
-  document.getElementById('rec-stat').textContent    = savedBlobs.length > 0 ? '補錄中' : '錄音中';
-  document.getElementById('pause-icon').textContent  = '⏸️';
-  document.getElementById('pause-label').textContent = '暫停';
+// 設定錄音畫面狀態：paused=true 顯示「已暫停」，false 顯示「錄音中／補錄中」
+function setRecUI(paused) {
+  isPaused = paused;
+  document.getElementById('rec-circle').className    = 'rec-circle' + (paused ? ' paused' : '');
+  document.getElementById('rec-stat').className      = 'rec-stat'   + (paused ? ' paused' : '');
+  document.getElementById('rec-stat').textContent    = paused ? '已暫停' : (savedBlobs.length > 0 ? '補錄中' : '錄音中');
+  document.getElementById('pause-icon').textContent  = paused ? '▶️' : '⏸️';
+  document.getElementById('pause-label').textContent = paused ? '繼續' : '暫停';
 }
 
 function updateTimer() {
-  const hh = Math.floor(recSecs / 3600);
-  const mm = Math.floor((recSecs % 3600) / 60);
-  const ss = recSecs % 60;
-  document.getElementById('timer').textContent =
-    (hh > 0 ? p2(hh) + ':' : '') + p2(mm) + ':' + p2(ss);
+  document.getElementById('timer').textContent = fmtDur(recSecs);
 }
 
 function stopRec() {
@@ -598,11 +636,15 @@ function stopRec() {
   if (audioStream) audioStream.getTracks().forEach(t => t.stop());
 }
 
+// 取消錄音：若是「補錄」中，只取消這一段，前面已錄好的段落保留
 function cancelRec() {
-  if (!confirm('確定取消？本次錄音（含所有補錄段）將不會儲存。')) return;
+  const hasPrev = savedBlobs.length > 0;
+  const msg = hasPrev
+    ? `確定取消「這一段」補錄？\n前面已錄好的 ${savedBlobs.length} 段會保留，不會被刪除。`
+    : '確定取消？本次錄音將不會儲存。';
+  if (!confirm(msg)) return;
   clearInterval(timerTick);
   isPaused = false;
-  savedBlobs = [];
   if (mediaRecorder && mediaRecorder.state !== 'inactive') {
     mediaRecorder.ondataavailable = null;
     mediaRecorder.onstop = null;
@@ -611,7 +653,13 @@ function cancelRec() {
   }
   if (audioStream) audioStream.getTracks().forEach(t => t.stop());
   audioChunks = [];
-  showScr('s-ready');
+  if (hasPrev) {
+    lastBlob = savedBlobs.pop();   // 把上一段放回「最新一段」，回到錄音完成頁
+    showDoneScreen();
+  } else {
+    savedBlobs = [];
+    showScr('s-ready');
+  }
 }
 
 function togglePause() {
@@ -619,23 +667,12 @@ function togglePause() {
 
   if (isPaused) {
     if (typeof mediaRecorder.resume === 'function') mediaRecorder.resume();
-    isPaused = false;
-    timerTick = setInterval(() => { recSecs++; updateTimer(); }, 1000);
-    document.getElementById('pause-icon').textContent  = '⏸️';
-    document.getElementById('pause-label').textContent = '暫停';
-    document.getElementById('rec-circle').className    = 'rec-circle';
-    document.getElementById('rec-stat').className      = 'rec-stat';
-    document.getElementById('rec-stat').textContent    = savedBlobs.length > 0 ? '補錄中' : '錄音中';
+    startTimer();
   } else {
     if (typeof mediaRecorder.pause === 'function') mediaRecorder.pause();
-    isPaused = true;
     clearInterval(timerTick);
-    document.getElementById('pause-icon').textContent  = '▶️';
-    document.getElementById('pause-label').textContent = '繼續';
-    document.getElementById('rec-circle').className    = 'rec-circle paused';
-    document.getElementById('rec-stat').className      = 'rec-stat paused';
-    document.getElementById('rec-stat').textContent    = '已暫停';
   }
+  setRecUI(!isPaused);
 }
 
 function onRecStop() {
@@ -646,37 +683,81 @@ function onRecStop() {
 
 function showDoneScreen() {
   document.getElementById('done-name').textContent = mtgTitle;
-  const segCount = savedBlobs.length + 1;
-  const hh = Math.floor(recSecs / 3600);
-  const mm = Math.floor((recSecs % 3600) / 60);
-  const ss = recSecs % 60;
-  const durStr = (hh > 0 ? p2(hh) + ':' : '') + p2(mm) + ':' + p2(ss);
+  const segCount = pendingBlobs().length;
   document.getElementById('done-info').textContent =
-    `錄音時長 ${durStr}` + (segCount > 1 ? `（共 ${segCount} 段）` : '');
+    `錄音時長 ${fmtDur(recSecs)}` + (segCount > 1 ? `（共 ${segCount} 段）` : '');
+
+  // 若之前分析失敗過，提醒錄音仍保留、可下載
+  const note = document.getElementById('done-fail-note');
+  if (failCount > 0) {
+    note.textContent = `⚠️ AI 分析已失敗 ${failCount} 次，但錄音仍完整保留在本頁。` +
+      `可按「💾 下載錄音檔」存到手機，改用其他 AI 分析；或稍後再按「開始 AI 分析」重試。`;
+    note.hidden = false;
+  } else {
+    note.hidden = true;
+  }
   showScr('s-done');
+}
+
+// 目前尚未完成分析、仍在記憶體中的所有錄音段
+function pendingBlobs() {
+  return [...savedBlobs, lastBlob].filter(Boolean);
+}
+
+// 下載目前所有錄音段（錄音完成頁、分析中/失敗頁都可用）
+async function dlPendingAudio() {
+  const blobs = pendingBlobs();
+  if (!blobs.length) { showToast('⚠️ 目前沒有可下載的錄音'); return; }
+  await exportAudio(blobs);
+  audioDownloaded = true;
+}
+
+// 真正捨棄錄音（需確認，且未下載過會再提醒）
+function discardRec() {
+  const n = pendingBlobs().length;
+  if (n) {
+    const tip = audioDownloaded ? '' : '\n\n⚠️ 你還沒下載錄音檔！建議先按「取消」，再按「💾 下載錄音檔」保存。';
+    if (!confirm(`確定捨棄本次錄音（共 ${n} 段）？捨棄後無法復原。${tip}`)) return;
+  }
+  if (fetchAbortCtrl) fetchAbortCtrl.abort();
+  savedBlobs      = [];
+  lastBlob        = null;
+  processedBlobs  = [];
+  audioDownloaded = false;
+  failCount       = 0;
+  lastErrInfo     = null;
+  showScr('s-ready');
 }
 
 // ══════════════════════════════════════════════
 //  Screen 4 – 處理中
 // ══════════════════════════════════════════════
 function beginProcess(blob) {
-  document.getElementById('proc-err').textContent = '';
+  if (!pendingBlobs().length) { showToast('⚠️ 目前沒有錄音可以分析'); return; }
+  document.getElementById('proc-title').textContent = 'AI 分析中';
+  document.getElementById('proc-sub').textContent   = '正在處理會議錄音，請稍候…';
+  document.getElementById('proc-err').textContent   = '';
   document.getElementById('retry-btn').hidden = true;
+  document.getElementById('diag-btn').hidden  = true;
+  document.getElementById('diag-box').hidden  = true;
   resetSteps();
   showScr('s-proc');
   processAudio(blob);
 }
 
 function retryProc() {
-  if (lastBlob) beginProcess(lastBlob);
+  beginProcess(lastBlob);
 }
 
+// 取消分析：只停止這次分析，錄音保留並回到「錄音已完成」頁
 function procCancel() {
   if (fetchAbortCtrl) fetchAbortCtrl.abort();
-  savedBlobs     = [];
-  lastBlob       = null;
-  processedBlobs = [];
-  showScr('s-ready');
+  if (pendingBlobs().length) {
+    showDoneScreen();
+    showToast('已取消分析，錄音仍保留，可下載或稍後重試');
+  } else {
+    showScr('s-ready');
+  }
 }
 
 async function procContinueRec() {
@@ -690,22 +771,21 @@ async function procContinueRec() {
   try {
     audioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
   } catch(e) {
-    alert('無法取得麥克風：' + (e.message || e));
-    savedBlobs = [];
-    showScr('s-ready');
+    alert('無法取得麥克風：' + (e.message || e) + '\n\n已錄好的錄音仍保留。');
+    lastBlob = savedBlobs.pop() || null;   // 麥克風失敗時不刪錄音，退回錄音完成頁
+    showDoneScreen();
     return;
   }
 
+  audioDownloaded = false;   // 有新的一段，之前下載的備份已不完整
   setupRecorder();
 
   const segNote = document.getElementById('rec-seg-note');
   segNote.textContent = `🔄 補錄第 ${savedBlobs.length + 1} 段（前 ${savedBlobs.length} 段已保留）`;
   segNote.hidden = false;
+  document.getElementById('cancel-rec-btn').textContent = '取消這一段補錄（前面的段落會保留）';
 
-  resetRecUI();
-  updateTimer();
-  timerTick = setInterval(() => { recSecs++; updateTimer(); }, 1000);
-  showScr('s-rec');
+  enterRecScreen();
 }
 
 const STEP_ICONS = ['⬆️', '🤖', '📋'];
@@ -728,16 +808,24 @@ function setStep(n) {
   });
 }
 
-function showProcErr(msg) {
-  document.getElementById('proc-err').textContent = msg;
+// 分析失敗：記錄次數與原因，錄音不刪除
+function failProc(msg, info) {
+  failCount++;
+  lastErrInfo = Object.assign({ time: new Date().toLocaleString('zh-TW') }, info);
+  document.getElementById('proc-title').textContent = 'AI 分析未完成';
+  document.getElementById('proc-sub').textContent =
+    `已失敗 ${failCount} 次。錄音仍完整保留在本頁，可先按「💾 下載錄音檔」備份。`;
+  document.getElementById('proc-err').textContent =
+    msg + (failCount >= DIAG_AFTER ? `\n\n已連續失敗 ${failCount} 次，建議按「🔍 檢查問題原因」。` : '');
   document.getElementById('retry-btn').hidden = false;
+  document.getElementById('diag-btn').hidden  = failCount < DIAG_AFTER;
 }
 
 async function processAudio(blob) {
-  fetchAbortCtrl = new AbortController();
+  const ctrl = fetchAbortCtrl = new AbortController();
 
   // 合併所有段
-  const allBlobs = [...savedBlobs, blob];
+  const allBlobs = [...savedBlobs, blob].filter(Boolean);
   processedBlobs = allBlobs;   // 供輸出頁音檔下載
   const segCount = allBlobs.length;
 
@@ -747,9 +835,11 @@ async function processAudio(blob) {
   try {
     audioParts = await blobsToBase64(allBlobs);
   } catch(e) {
-    showProcErr('音頻處理失敗：' + e.message);
+    if (ctrl.signal.aborted) return;
+    failProc('音頻處理失敗：' + e.message, { stage: 'audio', message: e.message });
     return;
   }
+  if (ctrl.signal.aborted) return;
 
   // Step 1: 送 Gemini
   setStep(1);
@@ -757,19 +847,30 @@ async function processAudio(blob) {
   try {
     rawText = await callGemini(audioParts, segCount);
   } catch(e) {
-    if (e.name === 'AbortError') return;
-    showProcErr('AI 分析失敗：' + e.message);
+    if (e.name === 'AbortError' || ctrl.signal.aborted) return;
+    failProc('AI 分析失敗：' + e.message, {
+      stage: 'api', httpStatus: e.httpStatus, apiStatus: e.apiStatus,
+      reason: e.reason, model: e.model, message: e.message
+    });
     return;
   }
+  if (ctrl.signal.aborted) return;
 
   // Step 2: 解析 & 渲染
   setStep(2);
-  outputData = parseJSON(rawText);
-  if (!outputData) {
-    showProcErr('AI 回應格式錯誤，可能是本次會議內容較長導致回應被截斷。請點選重試；若持續發生，建議將錄音分段（先「停止」下載一次，再開新會議錄後半段）。');
+  const parsed = parseJSON(rawText);
+  if (!parsed) {
+    failProc(
+      'AI 回應格式錯誤，可能是本次會議內容較長導致回應被截斷。請點選重試；若持續發生，建議先下載錄音檔，改用其他 AI 分析。',
+      { stage: 'parse', finish: lastFinish, message: (rawText || '').slice(0, 200) }
+    );
     return;
   }
+  outputData  = parsed;
+  failCount   = 0;
+  lastErrInfo = null;
   await delay(600);
+  if (ctrl.signal.aborted) return;
   renderOutput(false);   // isRestore=false → 自動下載 TXT
   showScr('s-out');
 }
@@ -779,7 +880,7 @@ async function blobsToBase64(blobs) {
   const MB = totalSize / (1024 * 1024);
   if (totalSize > 15 * 1024 * 1024) {
     throw new Error(
-      `錄音總大小過大（${MB.toFixed(1)} MB）。\n24 kbps 下約可錄 80 分鐘，建議縮短後重試。`
+      `錄音總大小過大（${MB.toFixed(1)} MB）。\n24 kbps 下約可錄 80 分鐘，建議先下載錄音檔改用其他方式分析。`
     );
   }
   const parts = [];
@@ -806,9 +907,19 @@ function buildSys() {
   return s;
 }
 
-// 主模型 gemini-2.5-flash，降級至 gemini-2.5-flash-lite，再等待重試
-async function callGemini(audioParts, segCount = 1, model = 'gemini-2.5-flash') {
-  const actualModel = model === 'gemini-2.5-flash-lite-retry' ? 'gemini-2.5-flash-lite' : model;
+// 把 Google 回傳的錯誤包成帶有詳細欄位的 Error（供問題檢查用）
+function apiError(resp, err, model) {
+  const e = new Error(err.error?.message || 'API 錯誤 ' + resp.status);
+  e.httpStatus = resp.status;
+  e.apiStatus  = err.error?.status || '';
+  e.reason     = (err.error?.details || []).map(d => d.reason).filter(Boolean).join(',');
+  e.model      = model;
+  return e;
+}
+
+// 主模型 MODEL_MAIN，降級至 MODEL_LITE，再等待重試
+async function callGemini(audioParts, segCount = 1, model = MODEL_MAIN) {
+  const actualModel = model === MODEL_LITE + '-retry' ? MODEL_LITE : model;
 
   const segNote = segCount > 1
     ? `本次會議共有 ${segCount} 段錄音（含補錄），請合併分析全程。\n`
@@ -860,19 +971,31 @@ async function callGemini(audioParts, segCount = 1, model = 'gemini-2.5-flash') 
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({}));
     // 主模型過載 → 降級 lite
-    if ((resp.status === 429 || resp.status === 503) && model === 'gemini-2.5-flash') {
-      return callGemini(audioParts, segCount, 'gemini-2.5-flash-lite');
+    if ((resp.status === 429 || resp.status === 503) && model === MODEL_MAIN) {
+      return callGemini(audioParts, segCount, MODEL_LITE);
     }
     // lite 過載 → 等 3 秒再試一次
-    if ((resp.status === 429 || resp.status === 503) && model === 'gemini-2.5-flash-lite') {
+    if ((resp.status === 429 || resp.status === 503) && model === MODEL_LITE) {
       await delay(3000);
-      return callGemini(audioParts, segCount, 'gemini-2.5-flash-lite-retry');
+      return callGemini(audioParts, segCount, MODEL_LITE + '-retry');
     }
-    throw new Error(err.error?.message || 'API 錯誤 ' + resp.status);
+    throw apiError(resp, err, actualModel);
   }
 
   const data = await resp.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const cand = data.candidates?.[0];
+  lastFinish = cand?.finishReason || '';
+  const text = (cand?.content?.parts || []).map(p => p.text || '').join('');
+  if (!text) {
+    // 有連線成功但 AI 沒給內容（例如被安全機制擋下）
+    const why = data.promptFeedback?.blockReason || cand?.finishReason || '未知';
+    const e = new Error('AI 沒有回傳任何內容（原因：' + why + '）');
+    e.apiStatus = 'EMPTY_RESPONSE';
+    e.reason    = why;
+    e.model     = actualModel;
+    throw e;
+  }
+  return text;
 }
 
 function parseJSON(text) {
@@ -881,6 +1004,177 @@ function parseJSON(text) {
   const m = text.match(/\{[\s\S]+\}/);
   if (m) try { return JSON.parse(m[0]); } catch(e) {}
   return null;  // 解析失敗，交由呼叫端顯示明確錯誤（不可硬湊結果）
+}
+
+// ══════════════════════════════════════════════
+//  問題檢查（失敗 3 次後可用）
+// ══════════════════════════════════════════════
+// 依 Google 回傳的錯誤內容，翻成白話的原因與處理方式
+function classifyErr(i) {
+  const st  = i.httpStatus || 0;
+  const all = [i.apiStatus, i.reason, i.message].join(' ');
+
+  if (/API_KEY_INVALID|api key not valid/i.test(all))
+    return ['bad', '金鑰無效', '金鑰打錯、少複製字元，或已在 Google 那邊被刪除。請到 aistudio.google.com/apikey 確認或重新產生，然後回第一頁貼上新金鑰。'];
+  if (/expired/i.test(all))
+    return ['bad', '金鑰已過期', '請到 aistudio.google.com/apikey 重新產生金鑰，再回第一頁更換。'];
+  if (/leak/i.test(all))
+    return ['bad', '金鑰被 Google 判定外洩而停用', '請重新產生一把新金鑰，並注意不要把金鑰貼到公開的地方（例如 GitHub）。'];
+  // 注意：Google 的「額度用完」訊息本身就會寫 billing，所以要先判斷額度，再判斷付款
+  if (st === 429 || /RESOURCE_EXHAUSTED|quota/i.test(all))
+    return ['bad', '用量額度已用完（也可能是付款問題）', '已達每分鐘或每日的使用上限。若等幾分鐘後還是一樣，很可能是扣款失敗或帳單被停用，導致額度變成 0。請到 Google Cloud Console →「帳單」檢查付款狀態，或到 AI Studio 查看用量。'];
+  if (/billing|payment|prepa|credit|付款|帳單/i.test(all))
+    return ['bad', '帳單／付款問題（可能是扣款失敗）', '可能是信用卡扣款失敗、卡片過期、或帳單帳戶被停用。請到 Google Cloud Console →「帳單」頁面檢查付款狀態。'];
+  if (st === 403 || /PERMISSION_DENIED/i.test(all))
+    return ['bad', '權限不足', '這把金鑰沒有使用 Gemini 的權限。可能原因：API 未啟用、金鑰設定了「只限特定網站使用」、或專案被停權。'];
+  if (/FAILED_PRECONDITION|location|region|country/i.test(all))
+    return ['bad', '地區或帳單條件不符', 'Google 表示目前帳號所在地區或方案不能使用此功能，通常需要啟用帳單。'];
+  if (st === 404 || /NOT_FOUND/i.test(all))
+    return ['bad', '模型不存在或已被 Google 下架', '程式裡指定的模型名稱可能已停用，需要更新程式最上方的 MODEL_MAIN / MODEL_LITE。'];
+  if (st === 413 || /too large|payload|exceeds/i.test(all))
+    return ['bad', '錄音檔太大', '超過 Google 單次可接收的大小。請下載錄音檔，改用其他 AI 或分段分析。'];
+  if (st === 503 || /UNAVAILABLE|overloaded/i.test(all))
+    return ['warn', 'Google 伺服器忙碌中', '不是你的設定問題，請過幾分鐘再按重試。'];
+  if (st === 504 || /DEADLINE/i.test(all))
+    return ['warn', '處理逾時', '通常是錄音太長，Google 來不及處理完。可稍後重試，或下載錄音改用其他 AI。'];
+  if (st === 500 || /INTERNAL/i.test(all))
+    return ['warn', 'Google 伺服器內部錯誤', '多半是 Google 端暫時問題；若每次都發生，可能是錄音太長。'];
+  if (/EMPTY_RESPONSE|SAFETY|BLOCK/i.test(all))
+    return ['warn', 'AI 有收到但沒有回覆內容', '可能被 Google 的安全機制擋下或錄音無法辨識。金鑰與付款本身沒問題。'];
+  if (!st && /fetch|network|load failed/i.test(all))
+    return ['bad', '網路連線失敗', '手機可能斷網、訊號不穩，或公司網路擋住了 Google 的服務。請換個網路（例如切換 Wi-Fi／行動網路）再試。'];
+  if (st === 400 || /INVALID_ARGUMENT/i.test(all))
+    return ['bad', '送出的內容 Google 無法接受', '可能是錄音格式不被支援或檔案損毀。建議下載錄音檔確認能否正常播放。'];
+  return ['warn', '無法判斷的錯誤', '請把下方原始錯誤訊息截圖或複製給開發者（或貼給 Claude）協助判讀。'];
+}
+
+// 實際打一個極小的測試請求（只花極少量額度）
+async function testModel(model) {
+  try {
+    const resp = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        method : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body   : JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: '只回覆 OK' }] }],
+          generationConfig: { maxOutputTokens: 20, thinkingConfig: { thinkingBudget: 0 } }
+        })
+      }
+    );
+    if (resp.ok) return null;
+    const err = await resp.json().catch(() => ({}));
+    const e = apiError(resp, err, model);
+    return { httpStatus: e.httpStatus, apiStatus: e.apiStatus, reason: e.reason, message: e.message };
+  } catch(e) {
+    return { httpStatus: 0, message: e.message };
+  }
+}
+
+async function runDiag() {
+  const box = document.getElementById('diag-box');
+  const btn = document.getElementById('diag-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 檢查中…';
+  box.hidden = false;
+
+  const rows = [];
+  const icon = { ok: '✅', bad: '❌', warn: '⚠️', info: 'ℹ️' };
+  const add  = (lvl, title, detail = '', raw = '') => {
+    rows.push({ lvl, title, detail, raw });
+    box.innerHTML = '<div style="font-weight:600;margin-bottom:4px">🔍 檢查結果</div>' +
+      rows.map(r => `<div class="diag-row diag-${r.lvl}">
+        <div class="diag-t">${icon[r.lvl]} ${h(r.title)}</div>
+        ${r.detail ? `<div>${h(r.detail)}</div>` : ''}
+        ${r.raw ? `<div class="diag-raw">${h(r.raw)}</div>` : ''}
+      </div>`).join('');
+    box.scrollIntoView({ block: 'end', behavior: 'smooth' });
+  };
+
+  // 1. 網路
+  if (!navigator.onLine) add('bad', '裝置目前沒有網路', '請確認 Wi-Fi 或行動網路已開啟。');
+  else add('ok', '裝置有網路連線');
+
+  // 2. 錄音檔
+  const blobs = pendingBlobs();
+  const mb = blobs.reduce((s, b) => s + b.size, 0) / 1048576;
+  if (!blobs.length)      add('bad', '找不到錄音資料', '錄音可能已被清除（例如頁面重新整理過）。');
+  else if (mb > 15)       add('bad', `錄音檔太大（${mb.toFixed(1)} MB）`, '超過本工具上限 15 MB，請下載錄音檔改用其他 AI 分析。');
+  else if (mb > 10)       add('warn', `錄音檔偏大（${mb.toFixed(1)} MB）`, '檔案較大時較容易逾時失敗；若一直失敗，建議下載錄音改用其他 AI。');
+  else                    add('ok', `錄音檔大小正常（${mb.toFixed(1)} MB，共 ${blobs.length} 段）`);
+
+  // 3. 金鑰是否有效（查詢模型清單，不消耗額度）
+  let keyOk = false;
+  if (!apiKey) {
+    add('bad', '沒有設定金鑰', '請回第一頁輸入 Gemini API Key。');
+  } else {
+    try {
+      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      if (resp.ok) {
+        keyOk = true;
+        add('ok', '金鑰有效（可以連上 Google AI）');
+      } else {
+        const err = await resp.json().catch(() => ({}));
+        const e = apiError(resp, err, '-');
+        const [lvl, t, d] = classifyErr(e);
+        add(lvl, '金鑰檢查：' + t, d, `HTTP ${e.httpStatus} ${e.apiStatus} ${e.reason} ｜ ${e.message}`);
+      }
+    } catch(e) {
+      add('bad', '金鑰檢查：連不上 Google', '可能是網路問題或公司網路擋住了 Google 服務。', e.message);
+    }
+  }
+
+  // 4. 額度 / 付款 / 模型是否可用（各送一個極小的測試請求）
+  if (keyOk) {
+    for (const m of [MODEL_MAIN, MODEL_LITE]) {
+      const r = await testModel(m);
+      if (!r) add('ok', `模型 ${m} 可正常使用（額度與付款正常）`);
+      else {
+        const [lvl, t, d] = classifyErr(r);
+        add(lvl, `模型 ${m}：${t}`, d, `HTTP ${r.httpStatus} ${r.apiStatus || ''} ${r.reason || ''} ｜ ${r.message}`);
+      }
+    }
+  }
+
+  // 5. 最近一次分析失敗的原因
+  if (lastErrInfo) {
+    const i = lastErrInfo;
+    if (i.stage === 'audio') {
+      add('bad', '上次失敗：錄音檔處理失敗', '問題出在手機端整理錄音檔，還沒送到 Google。', i.message);
+    } else if (i.stage === 'parse') {
+      const cut = i.finish === 'MAX_TOKENS';
+      add('warn', '上次失敗：AI 有回覆，但內容格式不完整',
+        cut ? 'AI 的回覆因為太長被截斷。金鑰與付款沒問題，是會議太長造成的。'
+            : '金鑰與付款沒問題，是 AI 回覆格式出錯，通常重試即可。',
+        `結束原因：${i.finish || '未知'} ｜ 回覆開頭：${i.message}`);
+    } else {
+      const [lvl, t, d] = classifyErr(i);
+      add(lvl, '上次失敗原因：' + t, d,
+        `${i.time} ｜ 模型 ${i.model || '-'} ｜ HTTP ${i.httpStatus || '-'} ${i.apiStatus || ''} ${i.reason || ''} ｜ ${i.message}`);
+    }
+  }
+
+  // 6. 結論
+  const hasBad = rows.some(r => r.lvl === 'bad');
+  add('info', '建議下一步',
+    (hasBad ? '請先依上方 ❌ 項目處理。' : '設定看起來都正常，可能是暫時性問題，可稍後按重試。') +
+    '\n錄音仍保留在本頁，可按「💾 下載錄音檔」存起來，改用其他 AI 分析。');
+
+  // 複製檢查結果按鈕（方便貼給別人協助判讀）
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'btn-sm';
+  copyBtn.style.cssText = 'width:100%;margin-top:8px;flex:none';
+  copyBtn.textContent = '📋 複製檢查結果';
+  copyBtn.onclick = () => {
+    const txt = rows.map(r => `${icon[r.lvl]} ${r.title}\n${r.detail}${r.raw ? '\n' + r.raw : ''}`).join('\n\n');
+    (navigator.clipboard?.writeText(txt) || Promise.reject())
+      .then(() => showToast('✅ 已複製，可貼到 LINE 或給 Claude'))
+      .catch(() => showToast('⚠️ 無法自動複製，請直接截圖'));
+  };
+  box.appendChild(copyBtn);
+
+  btn.disabled = false;
+  btn.textContent = '🔍 重新檢查';
 }
 
 // ══════════════════════════════════════════════
@@ -990,7 +1284,7 @@ function exportTxt() {
     );
   }
 
-  const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+  const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/plain;charset=utf-8' });
   dlFile(blob, 'meeting_' + dateStr() + '.txt');
 }
 
@@ -1035,18 +1329,28 @@ function exportXls() {
   XLSX.writeFile(wb, 'meeting_' + dateStr() + '.xlsx');
 }
 
-async function exportAudio() {
-  if (!processedBlobs.length) {
+// 依錄音格式給正確副檔名（iPhone 錄出來是 mp4，標成 webm 會讓其他 AI 讀不到）
+function audioExt(type = '') {
+  if (type.includes('ogg')) return 'ogg';
+  if (type.includes('mp4') || type.includes('aac') || type.includes('m4a')) return 'm4a';
+  if (type.includes('mpeg')) return 'mp3';
+  return 'webm';
+}
+
+// blobs 不指定時，下載「已送出分析」的錄音（輸出頁用）
+async function exportAudio(blobs = processedBlobs) {
+  if (!blobs || !blobs.length) {
     showToast('⚠️ 錄音資料已清除（重新整理後無法取回）');
     return;
   }
-  showToast('🎙️ 下載錄音中…');
-  for (let i = 0; i < processedBlobs.length; i++) {
-    const blob = processedBlobs[i];
-    const ext  = blob.type.includes('ogg') ? 'ogg' : 'webm';
-    const suf  = processedBlobs.length > 1 ? `_seg${i + 1}` : '';
-    dlFile(blob, `meeting_audio_${dateStr()}${suf}.${ext}`);
-    if (i < processedBlobs.length - 1) await delay(400);
+  showToast(blobs.length > 1
+    ? `🎙️ 下載錄音中（共 ${blobs.length} 段，若瀏覽器詢問請按「允許」）`
+    : '🎙️ 下載錄音中…', 3500);
+  for (let i = 0; i < blobs.length; i++) {
+    const blob = blobs[i];
+    const suf  = blobs.length > 1 ? `_seg${i + 1}` : '';
+    dlFile(blob, `meeting_audio_${dateStr()}${suf}.${audioExt(blob.type)}`);
+    if (i < blobs.length - 1) await delay(600);
   }
 }
 
@@ -1098,34 +1402,58 @@ async function exportScreenshot() {
   }
 }
 
-// 關閉會議：不做任何自動下載，只做防呆確認後清除暫存紀錄並嘗試關閉頁面。
-// 各檔案（TXT / Excel / 音檔 / 截圖）一律由使用者自行點擊上方個別按鈕下載，
-// 避免瀏覽器靜默擋下連續自動下載而遺漏檔案。
-function closeMeeting() {
-  const ok = confirm('確定都有下載完畢嗎？\n（TXT / Excel / 音檔 / 截圖，關閉後將無法再從此頁面下載）');
-  if (!ok) return;
+async function finishMeeting() {
+  const btn = document.getElementById('finish-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 下載中，請稍候…';
 
-  // 使用者確認後才清除暫存紀錄，避免誤觸就遺失尚未下載的資料
+  showToast('📥 即將下載多個檔案，若瀏覽器詢問「是否允許多個下載」，請務必點選允許', 4500);
+  await delay(500);
+
+  let hadError = false;
+  try {
+    exportTxt();
+    await delay(700);
+    exportXls();
+    await delay(700);
+    if (processedBlobs.length) {
+      await exportAudio();
+      await delay(700);
+    }
+    await exportScreenshot();
+  } catch(e) {
+    hadError = true;
+    showToast('⚠️ 下載過程發生錯誤：' + e.message, 4000);
+  }
+
+  // 已完整下載，清除暫存紀錄，避免下次開啟頁面時仍顯示「未處理紀錄」提示
   try { localStorage.removeItem(OUTPUT_S); } catch(e) {}
 
-  showToast('✅ 會議已關閉，即將嘗試關閉頁面', 2500);
-  setTimeout(() => {
-    window.close();
-    // 若瀏覽器安全限制無法自動關閉（例如非程式開啟的分頁），提示使用者手動關閉
-    showToast('請手動關閉此分頁', 3000);
-  }, 600);
+  if (hadError) {
+    btn.disabled = false;
+    btn.textContent = '⚠️ 部分下載可能失敗，請用下方按鈕個別重新下載';
+    return; // 不自動關閉，避免遺失尚未確認下載的檔案
+  }
+
+  showToast('✅ 已觸發全部檔案下載，請檢查手機/電腦的下載記錄確認都有收到', 4000);
+  btn.disabled = false;
+  btn.textContent = '✅ 確認都下載到了嗎？點此關閉頁面';
+  btn.onclick = () => { window.close(); };
 }
 
 function newMtg() {
   localStorage.removeItem(OUTPUT_S);   // 清除持久化記錄
-  outputData     = null;
-  processedBlobs = [];
-  lastBlob       = null;
-  savedBlobs     = [];
-  fetchAbortCtrl = null;
-  audioChunks    = [];
-  isPaused       = false;
-  uploadedFiles  = [];
+  outputData      = null;
+  processedBlobs  = [];
+  lastBlob        = null;
+  savedBlobs      = [];
+  fetchAbortCtrl  = null;
+  audioChunks     = [];
+  isPaused        = false;
+  uploadedFiles   = [];
+  audioDownloaded = false;
+  failCount       = 0;
+  lastErrInfo     = null;
   document.getElementById('file-list').innerHTML = '';
   hideRecoverBanner();
   showScr('s-setup');
@@ -1140,6 +1468,11 @@ function h(s) {
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function p2(n)    { return String(n).padStart(2, '0'); }
+// 秒數 → 時:分:秒（未滿 1 小時只顯示 分:秒）
+function fmtDur(s) {
+  const hh = Math.floor(s / 3600), mm = Math.floor((s % 3600) / 60);
+  return (hh > 0 ? p2(hh) + ':' : '') + p2(mm) + ':' + p2(s % 60);
+}
 function delay(ms){ return new Promise(r => setTimeout(r, ms)); }
 function dateStr(){ return new Date().toISOString().slice(0, 10); }
 function dlFile(blob, name) {
